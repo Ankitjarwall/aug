@@ -28,18 +28,17 @@ export function NetflixIntro({ settings, onDone }: { settings: Settings; onDone:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function finish(skipped: boolean) {
+  function finish() {
     sessionStorage.setItem("gift-intro-seen", "1");
     if (settings.introDisplayMode === "once_per_device") localStorage.setItem("gift-intro-seen", "1");
     setVisible(false);
-    setTimeout(onDone, skipped ? 100 : 320);
+    setTimeout(onDone, 320);
   }
 
   if (!visible) return <div className="intro intro--leaving" aria-hidden="true" />;
   return (
     <div className="intro" role="status" aria-label={"Opening " + settings.siteTitle}>
-      <video className="intro-video" src={netflixIntroUrl} autoPlay muted playsInline preload="auto" onEnded={() => finish(false)} onError={() => finish(false)} />
-      <button className="intro-skip" onClick={() => finish(true)}>Skip intro</button>
+      <video className="intro-video" src={netflixIntroUrl} autoPlay muted playsInline preload="auto" onEnded={finish} onError={finish} />
     </div>
   );
 }

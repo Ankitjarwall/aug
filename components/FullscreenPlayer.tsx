@@ -72,6 +72,7 @@ export function FullscreenPlayer({ media, state, onClose, onProgress, onCredits,
       {isIntro ? (
         <>
           <button className="round-button player-close" onClick={onClose} aria-label="Close intro"><X /></button>
+          <button className="player-intro-skip" onClick={() => { setIntroBlocked(false); setPhase("content"); }}>Skip intro</button>
           {introBlocked && <button className="intro-play-button" onClick={() => { void video.current?.play(); setIntroBlocked(false); }} aria-label="Play intro"><Play fill="currentColor" /></button>}
         </>
       ) : (
