@@ -27,7 +27,16 @@ function normalizeMediaUrl_(value, type) {
 
 function inspectDriveFile_(value) {
   var startedAt = Date.now(), ref = parseDriveReference_(value);
-  if (!ref) { debugWarn_("drive.inspect.invalid", "Media value is not a valid Drive reference.", { hasValue: Boolean(value) }); return { fileId: "", isAccessible: false, isPublic: false, issue: value ? "Invalid Drive link" : "Empty URL" }; }
+  if (!ref) {
+    var directUrl = String(value || "").trim();
+    if (/^https:\/\//i.test(directUrl)) {
+      var directName = directUrl.split("?")[0].split("/").pop() || "Public media URL";
+      debugInfo_("drive.inspect.direct", "Accepted a direct public HTTPS media URL.", { host: (directUrl.match(/^https:\/\/([^/]+)/i) || ["", ""])[1], fileName: directName });
+      return { fileId: "", fileName: directName, mimeType: "external", size: 0, isAccessible: true, isPublic: true, sharingAccess: "PUBLIC_HTTPS", sharingPermission: "VIEW", viewUrl: directUrl, previewUrl: directUrl, downloadUrl: directUrl, thumbnailUrls: [directUrl], resourceKey: "", issue: "" };
+    }
+    debugWarn_("drive.inspect.invalid", "Media value is neither a Drive reference nor a public HTTPS URL.", { hasValue: Boolean(value) });
+    return { fileId: "", isAccessible: false, isPublic: false, issue: value ? "Invalid media URL" : "Empty URL" };
+  }
   debugInfo_("drive.inspect.start", "Inspecting Drive file.", { fileId: ref.fileId, hasResourceKey: Boolean(ref.resourceKey) });
   try {
     var file = DriveApp.getFileById(ref.fileId), access = file.getSharingAccess(), permission = file.getSharingPermission(), publicAccess = access === DriveApp.Access.ANYONE || access === DriveApp.Access.ANYONE_WITH_LINK;

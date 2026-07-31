@@ -31,7 +31,7 @@ function initializeNetflixGiftSheet() {
   }
 }
 function applySheetRules_(sheet, headers) {
-  var startedAt = Date.now(), rows = Math.max(2, sheet.getMaxRows()), booleanNames = ["enabled", "show_on_home", "featured", "allow_like", "allow_favourite", "show_in_search", "liked", "favourite", "completed"], checkboxColumns = [], dropdownColumns = [];
+  var startedAt = Date.now(), rows = Math.max(2, sheet.getLastRow()), booleanNames = ["enabled", "show_on_home", "featured", "allow_like", "allow_favourite", "show_in_search", "liked", "favourite", "completed"], checkboxColumns = [], dropdownColumns = [];
   debugDebug_("setup.rules.start", "Applying Sheet validation rules.", { sheetName: sheet.getName(), rowCapacity: rows, headerCount: headers.length });
   booleanNames.forEach(function(name) {
     var col = headers.indexOf(name) + 1;
@@ -69,7 +69,19 @@ function applySheetRules_(sheet, headers) {
   }
   var enabledCol = headers.indexOf("enabled") + 1;
   if (enabledCol) sheet.setConditionalFormatRules([SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied("=$" + columnLetter_(enabledCol) + "2=FALSE").setBackground("#3d171a").setRanges([sheet.getRange(2, 1, rows - 1, headers.length)]).build()]);
-  debugInfo_("setup.rules.complete", "Sheet validation rules applied.", { sheetName: sheet.getName(), checkboxColumns: checkboxColumns, dropdownColumns: dropdownColumns, conditionalFormatting: Boolean(enabledCol), durationMs: Date.now() - startedAt });
+  var filter = sheet.getFilter(), filterUpdated = false;
+  if (!filter || filter.getRange().getNumRows() !== rows || filter.getRange().getNumColumns() !== headers.length) {
+    var savedCriteria = {};
+    if (filter) {
+      headers.forEach(function(header, index) { var criteria = filter.getColumnFilterCriteria(index + 1); if (criteria) savedCriteria[index + 1] = criteria; });
+      filter.remove();
+    }
+    filter = sheet.getRange(1, 1, rows, headers.length).createFilter();
+    Object.keys(savedCriteria).forEach(function(column) { filter.setColumnFilterCriteria(Number(column), savedCriteria[column]); });
+    filterUpdated = true;
+    debugInfo_("setup.filter.resize", "Sheet filter range updated to cover populated rows.", { sheetName: sheet.getName(), rowCount: rows, columnCount: headers.length, restoredCriteriaCount: Object.keys(savedCriteria).length });
+  }
+  debugInfo_("setup.rules.complete", "Sheet validation rules applied.", { sheetName: sheet.getName(), checkboxColumns: checkboxColumns, dropdownColumns: dropdownColumns, conditionalFormatting: Boolean(enabledCol), filterUpdated: filterUpdated, durationMs: Date.now() - startedAt });
 }
 
 function insertSampleContent() {
@@ -78,16 +90,46 @@ function insertSampleContent() {
   var startedAt = Date.now();
   try {
     var ss = spreadsheet_();
-    debugInfo_("samples.start", "Checking sample content.", {});
-    appendMissing_(ss.getSheetByName("Settings"), [
-      ["site_title", "Ankit & you", "Browser tab title and main site identity. Enter any text.", true],
+    var sampleResults = {};
+    var demoImages = [
+      "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1529634597503-139d3726fed5?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1494774157365-9e04c6720e47?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1501901609772-df0848060b33?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1496440737103-cd596325d314?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=85",
+      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=85"
+    ];
+    var demoVideos = {
+      0: ["https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", 30],
+      6: ["https://media.w3.org/2010/05/sintel/trailer.mp4", 52],
+      9: ["https://media.w3.org/2010/05/bunny/trailer.mp4", 33],
+      12: ["https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", 30],
+      18: ["https://media.w3.org/2010/05/sintel/trailer.mp4", 52]
+    };
+    debugInfo_("samples.start", "Checking sample content.", { spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6) });
+    sampleResults.Settings = upsertSampleRows_(ss.getSheetByName("Settings"), [
+      ["site_title", "Ankit & Shimran", "Browser tab title and main site identity. Enter any text.", true],
       ["partner_one_name", "Ankit", "First partner name used in personalised copy.", true],
-      ["partner_two_name", "you", "Second partner name used in personalised copy.", true],
-      ["relationship_start_date", "", "Optional anniversary date. Enter a valid Sheet date.", true],
+      ["partner_two_name", "Shimran", "Second partner name used in personalised copy.", true],
+      ["relationship_start_date", new Date(2025, 1, 14), "Optional anniversary date. Enter a valid Sheet date.", true],
       ["default_tagline", "Every love story is beautiful, but ours is my favourite.", "Default romantic tagline shown where no custom copy is provided.", true],
       ["netflix_logo_text", "OUR STORY", "Header wordmark. Short uppercase text works best.", true],
-      ["profile_name", "Ankit & you", "Profile label shown beside the avatar.", true],
-      ["profile_avatar_drive_url", "", "Optional public Google Drive image URL for the profile avatar.", true],
+      ["profile_name", "Ankit & Shimran", "Profile label shown beside the avatar.", true],
+      ["profile_avatar_drive_url", demoImages[1], "Optional Google Drive image or direct public image URL for the profile avatar.", true],
       ["intro_enabled", true, "Show the opening animation. Options: TRUE or FALSE.", true],
       ["intro_duration_ms", 4000, "Intro duration in milliseconds. Allowed range: 1200 to 15000.", true],
       ["intro_display_mode", "always", "Opening frequency. Options: always, once_per_session, once_per_device, disabled.", true],
@@ -106,19 +148,20 @@ function insertSampleContent() {
       ["default_language", "en", "Default content language code, for example en, hi, or ja.", true]
     ], 0);
 
-    appendMissing_(ss.getSheetByName("Navigation"), [
+    sampleResults.Navigation = upsertSampleRows_(ss.getSheetByName("Navigation"), [
       ["home", "Home", "section", "home", 1, true],
       ["story", "Our Story", "category", "our-story", 2, true],
       ["memories", "Memories", "category", "beautiful-memories", 3, true],
-      ["adventures", "Adventures", "category", "adventures-together", 4, true],
-      ["milestones", "Milestones", "category", "milestones", 5, true],
-      ["my-list", "My List", "section", "my-list", 6, true]
+      ["trips", "Trips", "category", "adventures-together", 4, true],
+      ["adventures", "Adventures", "category", "adventures-together", 5, true],
+      ["milestones", "Milestones", "category", "milestones", 6, true],
+      ["my-list", "My List", "section", "my-list", 7, true]
     ], 0);
 
-    appendMissing_(ss.getSheetByName("Hero"), [[
-      "main-hero", "The Story of Ankit & you", "A Love Story", "A LOVE STORY",
+    sampleResults.Hero = upsertSampleRows_(ss.getSheetByName("Hero"), [[
+      "main-hero", "The Story of Ankit & Shimran", "A Love Story", "A LOVE STORY",
       "From unexpected beginnings to unforgettable memories, this is the story of two people who found home in each other.",
-      "demo/romantic-hero.png", "demo/romantic-hero.png", "", "", "memory-1", "Play", "More Info",
+      demoImages[0], demoImages[0], "", demoVideos[0][0], "memory-1", "Play", "More Info",
       "2026 - A Lifetime Series - Romance", 1, true, new Date()
     ]], 0);
 
@@ -132,7 +175,7 @@ function insertSampleContent() {
       ["milestones", "Milestones", "Days that changed everything", "Anniversaries, achievements, and meaningful new chapters.", 7, true, true, "16:9", new Date()],
       ["forever-and-always", "Forever and Always", "The story continues", "Promises, dreams, and everything still waiting ahead.", 8, true, true, "16:9", new Date()]
     ];
-    appendMissing_(ss.getSheetByName("Categories"), categories, 0);
+    sampleResults.Categories = upsertSampleRows_(ss.getSheetByName("Categories"), categories, 0);
 
     var mediaSeeds = [
       ["The Day It Began", "our-story", "Where your story first started."],
@@ -160,23 +203,25 @@ function insertSampleContent() {
     categories.forEach(function(category) { categoryTitleById[category[0]] = category[1]; });
     var mediaRows = mediaSeeds.map(function(seed, i) {
       var isCredits = i === mediaSeeds.length - 1;
+      var demoVideo = demoVideos[i];
+      var demoImage = demoImages[i];
       return [
         "memory-" + (i + 1), seed[0], seed[0], seed[2],
         seed[2] + " Replace this sample with your own photo, date, location, links, and personal message.",
-        isCredits ? "credits" : "image", "demo/romantic-hero.png", "demo/romantic-hero.png", "demo/romantic-hero.png",
-        "", "", "demo/romantic-hero.png", 0, "A treasured moment", "2026", "", "LOVE",
-        categoryTitleById[seed[1]] + ", Ankit, you", "Add your location", i === 0, true, true, true,
+        isCredits ? "credits" : (demoVideo ? "video" : "image"), demoImage, demoImage, demoImage,
+        demoVideo ? demoVideo[0] : "", "", demoImage, demoVideo ? demoVideo[1] : 0, demoVideo ? "Open sample video" : "A treasured moment", "2026", "", "LOVE",
+        categoryTitleById[seed[1]] + ", Ankit, Shimran", "Add your location", i === 0, true, true, true,
         isCredits ? "main-credits" : "", i + 1, true, new Date()
       ];
     });
-    appendMissing_(ss.getSheetByName("Media"), mediaRows, 0);
-    appendMissing_(ss.getSheetByName("CategoryItems"), mediaSeeds.map(function(seed, i) {
+    sampleResults.Media = upsertSampleRows_(ss.getSheetByName("Media"), mediaRows, 0);
+    sampleResults.CategoryItems = upsertSampleRows_(ss.getSheetByName("CategoryItems"), mediaSeeds.map(function(seed, i) {
       return ["category-item-" + (i + 1), seed[1], "memory-" + (i + 1), i + 1, true];
     }), 0);
 
     var creditRows = [
       ["A Story Made Together", "Directed by", "Both of Us", "Every chapter was shaped by the two of us."],
-      ["Starring", "Cast", "Ankit and you", "Two people, one unforgettable story."],
+      ["Starring", "Cast", "Ankit and Shimran", "Two people, one unforgettable story."],
       ["Our Memories", "Story by", "Us", "Inspired by moments both big and small."],
       ["Made With Love", "Produced by", "Love, Patience and Support", "Created with care through every season."],
       ["Wherever We Are", "Location", "Home Is Wherever We Are Together", ""],
@@ -186,8 +231,8 @@ function insertSampleContent() {
       ["One Last Thing", "Final Message", "I Choose You", "Yesterday, today, and every day after."],
       ["Next Episode", "Coming Soon", "To Be Continued", "This story is only getting started."]
     ];
-    appendMissing_(ss.getSheetByName("Credits"), creditRows.map(function(row, i) {
-      return ["credit-" + (i + 1), "main-credits", row[0], row[1], row[2], row[3], "", i + 1, true];
+    sampleResults.Credits = upsertSampleRows_(ss.getSheetByName("Credits"), creditRows.map(function(row, i) {
+      return ["credit-" + (i + 1), "main-credits", row[0], row[1], row[2], row[3], demoImages[i], i + 1, true];
     }), 0);
 
     var exampleTimestamp = new Date();
@@ -197,31 +242,112 @@ function insertSampleContent() {
       ["sample-state-2", exampleVisitorId, "memory-2", false, true, 180, 180, 100, true, 2, exampleTimestamp, exampleTimestamp, exampleTimestamp],
       ["sample-state-3", exampleVisitorId, "memory-3", true, false, 0, 240, 0, false, 0, "", "", exampleTimestamp]
     ];
-    appendMissing_(ss.getSheetByName("UserState"), userStateRows, 0);
+    sampleResults.UserState = upsertSampleRows_(ss.getSheetByName("UserState"), userStateRows, 0);
 
     var activityRows = [
       ["sample-activity-1", exampleVisitorId, "site_open", "", "{\"sample\":true,\"note\":\"Example activity row\"}", "sample-user-agent-hash", exampleTimestamp],
       ["sample-activity-2", exampleVisitorId, "video_start", "memory-1", "{\"sample\":true,\"positionSeconds\":0}", "sample-user-agent-hash", exampleTimestamp],
       ["sample-activity-3", exampleVisitorId, "favourite", "memory-2", "{\"sample\":true,\"favourite\":true}", "sample-user-agent-hash", exampleTimestamp]
     ];
-    appendMissing_(ss.getSheetByName("ActivityLog"), activityRows, 0);
+    sampleResults.ActivityLog = upsertSampleRows_(ss.getSheetByName("ActivityLog"), activityRows, 0);
 
     var validationRows = [
-      ["sample-validation-1", "Hero", 2, "banner_drive_url", "Main Hero", "", "demo/romantic-hero.png", "valid", "Example row; run Validate All Media after adding Drive links.", exampleTimestamp],
-      ["sample-validation-2", "Media", 2, "thumbnail_drive_url", "The Day It Began", "", "demo/romantic-hero.png", "valid", "Example row; replace this path with a public Drive image.", exampleTimestamp],
-      ["sample-validation-3", "Media", 2, "video_drive_url", "The Day It Began", "", "", "valid", "Example row; optional video URL is currently blank.", exampleTimestamp]
+      ["sample-validation-1", "Hero", 2, "banner_drive_url", "Main Hero", "", "Unsplash demo image", "valid", "Example public stock image URL.", exampleTimestamp],
+      ["sample-validation-2", "Media", 2, "thumbnail_drive_url", "The Day It Began", "", "Unsplash demo image", "valid", "Example public stock thumbnail URL.", exampleTimestamp],
+      ["sample-validation-3", "Media", 2, "video_drive_url", "The Day It Began", "", "MDN CC0 demo video", "valid", "Example public stock video URL.", exampleTimestamp]
     ];
-    appendMissing_(ss.getSheetByName("ValidationLog"), validationRows, 0);
-    applySheetRules_(ss.getSheetByName("Settings"), SCHEMA.Settings);
+    sampleResults.ValidationLog = upsertSampleRows_(ss.getSheetByName("ValidationLog"), validationRows, 0);
+    Object.keys(SCHEMA).forEach(function(sheetName) { applySheetRules_(ss.getSheetByName(sheetName), SCHEMA[sheetName]); });
     clearContentCache_();
-    debugInfo_("samples.complete", "Sample content check completed.", { settings: 24, navigation: 6, heroes: 1, categories: categories.length, media: mediaRows.length, categoryItems: mediaSeeds.length, credits: creditRows.length, userState: userStateRows.length, activityLog: activityRows.length, validationLog: validationRows.length, spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6), durationMs: Date.now() - startedAt });
-    if (ownsContext) finishDebugExecution_(true, { media: mediaRows.length, categories: categories.length, credits: creditRows.length, userState: userStateRows.length, activityLog: activityRows.length, validationLog: validationRows.length, spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6) });
+    debugInfo_("samples.complete", "Sample content check completed.", { candidates: { settings: 24, navigation: 7, heroes: 1, categories: categories.length, media: mediaRows.length, categoryItems: mediaSeeds.length, credits: creditRows.length, userState: userStateRows.length, activityLog: activityRows.length, validationLog: validationRows.length }, writes: sampleResults, spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6), durationMs: Date.now() - startedAt });
+    if (ownsContext) finishDebugExecution_(true, { writes: sampleResults, spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6) });
   } catch (error) {
     debugError_("samples.error", "Sample content insertion failed.", error, { durationMs: Date.now() - startedAt });
     if (ownsContext) finishDebugExecution_(false, { code: error.code || "INTERNAL_ERROR" });
     throw error;
   }
 }
-function appendMissing_(sheet, rows, idColumn) { var existing = sheet.getLastRow() > 1 ? sheet.getRange(2, idColumn + 1, sheet.getLastRow() - 1, 1).getValues().map(function(r) { return String(r[0]); }) : []; var missing = rows.filter(function(row) { return existing.indexOf(String(row[idColumn])) < 0; }); debugDebug_("samples.sheet", "Sample rows compared.", { sheetName: sheet.getName(), candidateCount: rows.length, existingIdCount: existing.length, missingCount: missing.length }); if (missing.length) { var startRow = sheet.getLastRow() + 1; sheet.getRange(startRow,1,missing.length,missing[0].length).setValues(missing); debugInfo_("samples.sheet.write", "Missing sample rows inserted.", { sheetName: sheet.getName(), startRow: startRow, insertedCount: missing.length }); } return missing.length; }
+function upsertSampleRows_(sheet, rows, idColumn) {
+  var lastRow = sheet.getLastRow();
+  var width = rows.length ? rows[0].length : 0;
+  var existingRows = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, width).getValues() : [];
+  var clearedPlaceholderRows = 0;
+  var clearStart = -1;
+  function clearPlaceholderRange_(endIndex) {
+    if (clearStart < 0) return;
+    var count = endIndex - clearStart;
+    sheet.getRange(clearStart + 2, 1, count, width).clearContent();
+    for (var i = clearStart; i < endIndex; i++) existingRows[i] = new Array(width).fill("");
+    clearedPlaceholderRows += count;
+    clearStart = -1;
+  }
+  existingRows.forEach(function(row, index) {
+    var hasId = String(row[idColumn] || "") !== "";
+    var containsOnlyBlankCheckboxes = !hasId && row.every(function(value) { return value === "" || value == null || value === false; });
+    if (containsOnlyBlankCheckboxes && clearStart < 0) clearStart = index;
+    if (!containsOnlyBlankCheckboxes) clearPlaceholderRange_(index);
+  });
+  clearPlaceholderRange_(existingRows.length);
+
+  var rowById = {};
+  existingRows.forEach(function(row, index) {
+    var id = String(row[idColumn] || "");
+    if (id && rowById[id] == null) rowById[id] = index + 2;
+  });
+  function firstAvailableRow_() {
+    for (var index = 0; index < existingRows.length; index++) {
+      if (existingRows[index].every(function(value) { return value === "" || value == null; })) return index + 2;
+    }
+    existingRows.push(new Array(width).fill(""));
+    return existingRows.length + 1;
+  }
+
+  var insertedRows = 0;
+  var movedRows = 0;
+  var repairedRows = 0;
+  var repairedCells = 0;
+  rows.forEach(function(sampleRow) {
+    var id = String(sampleRow[idColumn]);
+    var existingRowNumber = rowById[id];
+    var availableRowNumber = firstAvailableRow_();
+    var rowNumber = existingRowNumber || availableRowNumber;
+    var currentRow = existingRowNumber ? existingRows[existingRowNumber - 2] : sampleRow.slice();
+
+    if (existingRowNumber && availableRowNumber < existingRowNumber) {
+      sheet.getRange(availableRowNumber, 1, 1, width).setValues([currentRow]);
+      sheet.getRange(existingRowNumber, 1, 1, width).clearContent();
+      existingRows[availableRowNumber - 2] = currentRow;
+      existingRows[existingRowNumber - 2] = new Array(width).fill("");
+      rowNumber = availableRowNumber;
+      rowById[id] = rowNumber;
+      movedRows++;
+    } else if (!existingRowNumber) {
+      sheet.getRange(rowNumber, 1, 1, width).setValues([currentRow]);
+      existingRows[rowNumber - 2] = currentRow;
+      rowById[id] = rowNumber;
+      insertedRows++;
+    }
+
+    var rowChanged = false;
+    var upgradingLegacyVideo = sampleRow[5] === "video" && currentRow[5] === "image" && !currentRow[9];
+    sampleRow.forEach(function(sampleValue, column) {
+      var currentValue = currentRow[column];
+      var isBlank = currentValue === "" || currentValue == null;
+      var isLegacyAsset = currentValue === "demo/romantic-hero.png";
+      var isLegacyVideoField = upgradingLegacyVideo && (column === 5 || column === 9 || column === 12 || column === 13);
+      if ((isBlank && sampleValue !== "") || isLegacyAsset || isLegacyVideoField) {
+        sheet.getRange(rowNumber, column + 1).setValue(sampleValue);
+        currentRow[column] = sampleValue;
+        repairedCells++;
+        rowChanged = true;
+      }
+    });
+    if (rowChanged) repairedRows++;
+  });
+
+  var result = { candidates: rows.length, insertedRows: insertedRows, movedRows: movedRows, repairedRows: repairedRows, repairedCells: repairedCells, clearedPlaceholderRows: clearedPlaceholderRows, finalDataRows: Math.max(0, sheet.getLastRow() - 1) };
+  debugInfo_("samples.sheet.complete", "Sample rows inserted, moved, or repaired.", { sheetName: sheet.getName(), result: result });
+  return result;
+}
 function slug_(value) { return String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); }
 function columnLetter_(column) { var result = ""; while (column) { column--; result = String.fromCharCode(65 + column % 26) + result; column = Math.floor(column / 26); } return result; }
