@@ -1,7 +1,20 @@
-const CACHE = "gift-static-v1";
+const CACHE = "gift-static-v2";
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(["./", "./demo/romantic-hero.png", "./manifest.webmanifest"]))));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))));
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET" || event.request.destination === "video") return;
-  event.respondWith(fetch(event.request).then(response => { const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy)); return response; }).catch(() => caches.match(event.request)));
+  const url = new URL(event.request.url);
+  if ((url.protocol !== "http:" && url.protocol !== "https:") || url.origin !== self.location.origin) return;
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(event.request);
+      if (response.ok && response.type === "basic") {
+        const cache = await caches.open(CACHE);
+        await cache.put(event.request, response.clone());
+      }
+      return response;
+    } catch {
+      return (await caches.match(event.request)) || Response.error();
+    }
+  })());
 });
