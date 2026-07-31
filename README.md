@@ -50,7 +50,7 @@ This site is intentionally public and anonymous. The signed session token limits
 
 1. Push the project to a GitHub repository on `main`.
 2. Open **Settings > Pages** and choose **GitHub Actions** as the source.
-3. Open **Settings > Secrets and variables > Actions > Variables** and add `NEXT_PUBLIC_APPS_SCRIPT_URL` with the production `/exec` URL.
+3. Set `NEXT_PUBLIC_APPS_SCRIPT_URL` in the tracked `.env` file.
 4. The Pages workflow automatically uses `/<repository-name>` as the base path. Set `NEXT_PUBLIC_BASE_PATH` only when the deployed site uses a different path.
 5. Push to `main` or run **Deploy static site to Pages** manually. The workflow installs with `npm ci`, runs lint, TypeScript, unit tests, and the static build, then uploads `out/` using official Pages actions.
 
