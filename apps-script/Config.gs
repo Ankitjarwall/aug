@@ -44,17 +44,28 @@ function getConfig_() {
 }
 
 function resolveSheetId_() {
-  if (NETFLIX_GIFT_CONFIG.SHEET_ID) { debugInfo_("config.sheet", "Using SHEET_ID from Config.gs.", { source: "code" }); return NETFLIX_GIFT_CONFIG.SHEET_ID; }
+  if (NETFLIX_GIFT_CONFIG.SHEET_ID) {
+    debugInfo_("config.sheet", "Using SHEET_ID from Config.gs.", { source: "code", sheetIdSuffix: String(NETFLIX_GIFT_CONFIG.SHEET_ID).slice(-6) });
+    return NETFLIX_GIFT_CONFIG.SHEET_ID;
+  }
   var props = PropertiesService.getScriptProperties();
   var savedId = props.getProperty("INTERNAL_SHEET_ID");
-  if (savedId) { debugInfo_("config.sheet", "Using internally recorded Sheet ID.", { source: "internal" }); return savedId; }
   var active = SpreadsheetApp.getActiveSpreadsheet();
-  if (!active) throw new Error("Set SHEET_ID at the top of Config.gs when using a standalone Apps Script project.");
-  props.setProperty("INTERNAL_SHEET_ID", active.getId());
-  debugInfo_("config.sheet", "Recorded the bound Sheet ID for web-app executions.", { source: "bound-sheet" });
-  return active.getId();
+  if (active) {
+    var activeId = active.getId();
+    if (savedId !== activeId) {
+      props.setProperty("INTERNAL_SHEET_ID", activeId);
+      debugWarn_("config.sheet.repaired", "Updated the internally recorded Sheet ID to the active spreadsheet.", { previousIdSuffix: String(savedId || "").slice(-6), sheetIdSuffix: activeId.slice(-6), spreadsheetName: active.getName() });
+    }
+    debugInfo_("config.sheet", "Using the active bound spreadsheet.", { source: "active-sheet", sheetIdSuffix: activeId.slice(-6), spreadsheetName: active.getName() });
+    return activeId;
+  }
+  if (savedId) {
+    debugInfo_("config.sheet", "Using internally recorded Sheet ID for a non-editor execution.", { source: "internal", sheetIdSuffix: savedId.slice(-6) });
+    return savedId;
+  }
+  throw new Error("Set SHEET_ID at the top of Config.gs when using a standalone Apps Script project.");
 }
-
 function getOrCreateSecret_() {
   if (NETFLIX_GIFT_CONFIG.APP_SECRET) {
     if (NETFLIX_GIFT_CONFIG.APP_SECRET.length < 20) throw new Error("APP_SECRET in Config.gs must contain at least 20 characters.");

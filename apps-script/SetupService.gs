@@ -190,10 +190,32 @@ function insertSampleContent() {
       return ["credit-" + (i + 1), "main-credits", row[0], row[1], row[2], row[3], "", i + 1, true];
     }), 0);
 
+    var exampleTimestamp = new Date();
+    var exampleVisitorId = "visitor_00000000-0000-0000-0000-000000000000";
+    var userStateRows = [
+      ["sample-state-1", exampleVisitorId, "memory-1", true, true, 45, 180, 25, false, 1, exampleTimestamp, exampleTimestamp, exampleTimestamp],
+      ["sample-state-2", exampleVisitorId, "memory-2", false, true, 180, 180, 100, true, 2, exampleTimestamp, exampleTimestamp, exampleTimestamp],
+      ["sample-state-3", exampleVisitorId, "memory-3", true, false, 0, 240, 0, false, 0, "", "", exampleTimestamp]
+    ];
+    appendMissing_(ss.getSheetByName("UserState"), userStateRows, 0);
+
+    var activityRows = [
+      ["sample-activity-1", exampleVisitorId, "site_open", "", "{\"sample\":true,\"note\":\"Example activity row\"}", "sample-user-agent-hash", exampleTimestamp],
+      ["sample-activity-2", exampleVisitorId, "video_start", "memory-1", "{\"sample\":true,\"positionSeconds\":0}", "sample-user-agent-hash", exampleTimestamp],
+      ["sample-activity-3", exampleVisitorId, "favourite", "memory-2", "{\"sample\":true,\"favourite\":true}", "sample-user-agent-hash", exampleTimestamp]
+    ];
+    appendMissing_(ss.getSheetByName("ActivityLog"), activityRows, 0);
+
+    var validationRows = [
+      ["sample-validation-1", "Hero", 2, "banner_drive_url", "Main Hero", "", "demo/romantic-hero.png", "valid", "Example row; run Validate All Media after adding Drive links.", exampleTimestamp],
+      ["sample-validation-2", "Media", 2, "thumbnail_drive_url", "The Day It Began", "", "demo/romantic-hero.png", "valid", "Example row; replace this path with a public Drive image.", exampleTimestamp],
+      ["sample-validation-3", "Media", 2, "video_drive_url", "The Day It Began", "", "", "valid", "Example row; optional video URL is currently blank.", exampleTimestamp]
+    ];
+    appendMissing_(ss.getSheetByName("ValidationLog"), validationRows, 0);
     applySheetRules_(ss.getSheetByName("Settings"), SCHEMA.Settings);
     clearContentCache_();
-    debugInfo_("samples.complete", "Sample content check completed.", { settings: 24, navigation: 6, heroes: 1, categories: categories.length, media: mediaRows.length, categoryItems: mediaSeeds.length, credits: creditRows.length, durationMs: Date.now() - startedAt });
-    if (ownsContext) finishDebugExecution_(true, { media: mediaRows.length, categories: categories.length, credits: creditRows.length });
+    debugInfo_("samples.complete", "Sample content check completed.", { settings: 24, navigation: 6, heroes: 1, categories: categories.length, media: mediaRows.length, categoryItems: mediaSeeds.length, credits: creditRows.length, userState: userStateRows.length, activityLog: activityRows.length, validationLog: validationRows.length, spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6), durationMs: Date.now() - startedAt });
+    if (ownsContext) finishDebugExecution_(true, { media: mediaRows.length, categories: categories.length, credits: creditRows.length, userState: userStateRows.length, activityLog: activityRows.length, validationLog: validationRows.length, spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6) });
   } catch (error) {
     debugError_("samples.error", "Sample content insertion failed.", error, { durationMs: Date.now() - startedAt });
     if (ownsContext) finishDebugExecution_(false, { code: error.code || "INTERNAL_ERROR" });
