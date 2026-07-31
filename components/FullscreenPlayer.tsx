@@ -67,7 +67,7 @@ export function FullscreenPlayer({ media, state, onClose, onProgress, onCredits,
         onCanPlay={(event) => { if (isIntro) void event.currentTarget.play().catch(() => setIntroBlocked(true)); }}
         onPlay={() => { if (isIntro) setIntroBlocked(false); else setPlaying(true); }}
         onPause={() => { if (!isIntro) { setPlaying(false); save(true); } }}
-        onEnded={() => { if (isIntro) { setPhase("content"); return; } save(true); if (media.endingCreditsId) onCredits(); else onClose(); }}
+        onEnded={(event) => { if (isIntro) { setPhase("content"); return; } event.currentTarget.pause(); save(true); if (media.endingCreditsId) onCredits(); else onClose(); }}
         onError={() => { if (isIntro) setPhase("content"); else setDriveFallback(true); }} />
       {isIntro ? (
         <>

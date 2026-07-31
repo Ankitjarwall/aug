@@ -17,7 +17,7 @@ describe("visitor and playback state", () => {
     expect(result.map(({ media }) => media.id)).toEqual(["memory-1"]);
   });
   it("filters and sorts My List", () => expect(myList(sampleData.media, [state("memory-1", { favourite: false }), state("memory-2", { favourite: true })]).map((item) => item.id)).toEqual(["memory-2"]));
-  it("maps category items in media order", () => expect(mapCategory(sampleData.categories[0], sampleData.media).map((item) => item.id)).toEqual(["memory-1", "memory-2"]));
+  it("maps category items in media order", () => expect(mapCategory(sampleData.categories[0], sampleData.media).map((item) => item.id)).toEqual(["memory-1", "memory-2", "memory-3", "memory-4", "memory-5", "memory-6", "memory-7", "memory-8", "memory-9", "memory-10"]));
   it("queues failed writes without mutating the source", () => { vi.setSystemTime(new Date("2026-01-01")); const queue = enqueue([], { action: "saveState", payload: { mediaId: "memory-1" } }); expect(queue).toHaveLength(1); expect(queue[0]).toMatchObject({ action: "saveState", attempts: 0 }); });
   it("treats soon-expiring tokens as expired", () => expect(tokenExpired(Date.now() + 20000)).toBe(true));
 });

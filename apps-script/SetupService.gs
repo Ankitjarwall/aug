@@ -166,6 +166,7 @@ function insertSampleContent() {
     ]], 0);
 
     var categories = [
+      ["top-10-today", "Top 10 Shows Today", "Today's most-loved memories", "The ten chapters at the top of your story today.", 0, true, true, "16:9", new Date()],
       ["our-story", "Our Story", "Where everything began", "First meetings, first conversations, and the start of your journey.", 1, true, true, "16:9", new Date()],
       ["beautiful-memories", "Beautiful Memories", "Moments worth keeping", "Favourite photos and memories from everyday life.", 2, true, true, "16:9", new Date()],
       ["adventures-together", "Adventures Together", "Places you explored", "Trips, drives, discoveries, and journeys taken together.", 3, true, true, "16:9", new Date()],
@@ -211,29 +212,43 @@ function insertSampleContent() {
         isCredits ? "credits" : (demoVideo ? "video" : "image"), demoImage, demoImage, demoImage,
         demoVideo ? demoVideo[0] : "", "", demoImage, demoVideo ? demoVideo[1] : 0, demoVideo ? "Open sample video" : "A treasured moment", "2026", "", "LOVE",
         categoryTitleById[seed[1]] + ", Ankit, Shimran", "Add your location", i === 0, true, true, true,
-        isCredits ? "main-credits" : "", i + 1, true, new Date()
+        (isCredits || demoVideo) ? "main-credits" : "", i + 1, true, new Date()
       ];
     });
     sampleResults.Media = upsertSampleRows_(ss.getSheetByName("Media"), mediaRows, 0);
-    sampleResults.CategoryItems = upsertSampleRows_(ss.getSheetByName("CategoryItems"), mediaSeeds.map(function(seed, i) {
-      return ["category-item-" + (i + 1), seed[1], "memory-" + (i + 1), i + 1, true];
-    }), 0);
+
+    var categoryItemRows = [];
+    var categoryItemCounts = {};
+    var playableMediaCount = mediaSeeds.length - 1;
+    categories.forEach(function(category, categoryIndex) {
+      var categoryId = category[0];
+      var offset = categoryId === "top-10-today" ? 0 : Math.max(0, categoryIndex - 1) * 2;
+      categoryItemCounts[categoryId] = 10;
+      for (var rank = 0; rank < 10; rank++) {
+        var mediaIndex = (offset + rank) % playableMediaCount;
+        categoryItemRows.push(["sample-category-item-" + categoryId + "-" + (rank + 1), categoryId, "memory-" + (mediaIndex + 1), rank + 1, true]);
+      }
+    });
+    debugInfo_("samples.categoryItems.built", "Built ten ranked sample items for every category.", { categoryCount: categories.length, categoryItemCount: categoryItemRows.length, itemsPerCategory: categoryItemCounts });
+    sampleResults.CategoryItems = replaceOwnedSampleRows_(ss.getSheetByName("CategoryItems"), categoryItemRows, 0, function(id) {
+      return /^category-item-[0-9]+$/.test(id) || id.indexOf("sample-category-item-") === 0;
+    });
 
     var creditRows = [
-      ["A Story Made Together", "Directed by", "Both of Us", "Every chapter was shaped by the two of us."],
-      ["Starring", "Cast", "Ankit and Shimran", "Two people, one unforgettable story."],
-      ["Our Memories", "Story by", "Us", "Inspired by moments both big and small."],
-      ["Made With Love", "Produced by", "Love, Patience and Support", "Created with care through every season."],
-      ["Wherever We Are", "Location", "Home Is Wherever We Are Together", ""],
-      ["Songs We Remember", "Soundtrack", "Our Favourite Songs", ""],
-      ["The People Beside Us", "Special Thanks", "Family and Friends", "For sharing the journey with us."],
-      ["For Every Tomorrow", "Dedicated to", "Our Future", "For all the memories still to come."],
+      ["A Love Story for the Ages", "Directed by", "My Girlfriend, Shimran", "You are the heart behind every beautiful scene."],
+      ["The Leading Lady", "Starring", "Shimran", "The smile that makes every day feel cinematic."],
+      ["Her Favourite Person", "Starring", "Ankit", "Lucky enough to share this story with you."],
+      ["Written From the Heart", "Written by", "Ankit", "Every word is another way of saying I love you."],
+      ["Our Greatest Production", "Produced by", "Love, Trust and Endless Laughter", "Made together, one memory at a time."],
+      ["The Perfect Setting", "Location", "Wherever I Am With You", "Every place feels like home beside you."],
+      ["Songs That Feel Like Us", "Soundtrack", "Our Favourite Songs", "For every drive, dance and quiet evening."],
+      ["For Every Tomorrow", "Dedicated to", "Shimran", "For the life we are still writing together."],
       ["One Last Thing", "Final Message", "I Choose You", "Yesterday, today, and every day after."],
-      ["Next Episode", "Coming Soon", "To Be Continued", "This story is only getting started."]
+      ["Next Episode", "Coming Soon", "Forever With You", "This love story is only getting started."]
     ];
-    sampleResults.Credits = upsertSampleRows_(ss.getSheetByName("Credits"), creditRows.map(function(row, i) {
+    sampleResults.Credits = replaceOwnedSampleRows_(ss.getSheetByName("Credits"), creditRows.map(function(row, i) {
       return ["credit-" + (i + 1), "main-credits", row[0], row[1], row[2], row[3], demoImages[i], i + 1, true];
-    }), 0);
+    }), 0, function(id) { return /^credit-[0-9]+$/.test(id); });
 
     var exampleTimestamp = new Date();
     var exampleVisitorId = "visitor_00000000-0000-0000-0000-000000000000";
@@ -259,13 +274,31 @@ function insertSampleContent() {
     sampleResults.ValidationLog = upsertSampleRows_(ss.getSheetByName("ValidationLog"), validationRows, 0);
     Object.keys(SCHEMA).forEach(function(sheetName) { applySheetRules_(ss.getSheetByName(sheetName), SCHEMA[sheetName]); });
     clearContentCache_();
-    debugInfo_("samples.complete", "Sample content check completed.", { candidates: { settings: 24, navigation: 7, heroes: 1, categories: categories.length, media: mediaRows.length, categoryItems: mediaSeeds.length, credits: creditRows.length, userState: userStateRows.length, activityLog: activityRows.length, validationLog: validationRows.length }, writes: sampleResults, spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6), durationMs: Date.now() - startedAt });
+    debugInfo_("samples.complete", "Sample content check completed.", { candidates: { settings: 24, navigation: 7, heroes: 1, categories: categories.length, media: mediaRows.length, categoryItems: categoryItemRows.length, credits: creditRows.length, userState: userStateRows.length, activityLog: activityRows.length, validationLog: validationRows.length }, writes: sampleResults, spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6), durationMs: Date.now() - startedAt });
     if (ownsContext) finishDebugExecution_(true, { writes: sampleResults, spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6) });
   } catch (error) {
     debugError_("samples.error", "Sample content insertion failed.", error, { durationMs: Date.now() - startedAt });
     if (ownsContext) finishDebugExecution_(false, { code: error.code || "INTERNAL_ERROR" });
     throw error;
   }
+}
+function replaceOwnedSampleRows_(sheet, rows, idColumn, isOwned) {
+  var lastRow = sheet.getLastRow();
+  var removedRows = 0;
+  if (lastRow > 1) {
+    var ids = sheet.getRange(2, idColumn + 1, lastRow - 1, 1).getValues();
+    for (var index = ids.length - 1; index >= 0; index--) {
+      var id = String(ids[index][0] || "");
+      if (id && isOwned(id)) {
+        sheet.deleteRow(index + 2);
+        removedRows++;
+      }
+    }
+  }
+  debugInfo_("samples.sheet.ownedRows", "Replaced managed sample rows while preserving custom rows.", { sheetName: sheet.getName(), removedRows: removedRows, replacementRows: rows.length });
+  var result = upsertSampleRows_(sheet, rows, idColumn);
+  result.removedOwnedRows = removedRows;
+  return result;
 }
 function upsertSampleRows_(sheet, rows, idColumn) {
   var lastRow = sheet.getLastRow();

@@ -2,30 +2,51 @@ import type { BootstrapData, MediaItem } from "@/types/content";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const hero = `${basePath}/demo/romantic-hero.png`;
-const scenes = ["#7d1821", "#19354c", "#70452e", "#285044", "#44263f", "#614d24"];
+const videoIndexes = new Set([0, 6, 9, 12, 18]);
+const categoryNames = ["Our Story", "Beautiful Memories", "Adventures Together", "Date Nights", "Funny Moments", "The Little Things", "Milestones", "Forever and Always"];
+const titles = [
+  "The Day It Began", "Our First Conversation", "That Beautiful Smile", "Our Favourite Evening", "A Picture Worth Keeping",
+  "Sunsets and Promises", "A Road Taken Together", "Miles of Memories", "Our Favourite Escape", "A Table for Two",
+  "Under the City Lights", "A Celebration to Remember", "Laughing Until Midnight", "Our Best Inside Joke", "Morning Messages",
+  "Home Is You", "A Day to Celebrate", "All We Have Achieved", "All Our Tomorrows", "To Be Continued",
+];
 
-function item(index: number, title: string, category: string): MediaItem {
+function item(index: number, title: string): MediaItem {
+  const isCredits = index === titles.length - 1;
+  const isVideo = videoIndexes.has(index);
+  const category = categoryNames[Math.min(Math.floor(index / 3), categoryNames.length - 1)];
   return {
     id: `memory-${index + 1}`, title, shortTitle: title, description: `A chapter from ${category.toLowerCase()}, kept close forever.`,
-    longDescription: `A favourite moment in the story of Ankit and you. Replace this sample with your own memory, photo, date, and message in the Media sheet.`,
-    mediaType: index === 11 ? "credits" : "image", thumbnailUrl: hero, backdropUrl: hero, mobileBackdropUrl: hero,
-    videoUrl: "", previewVideoUrl: "", posterUrl: hero, durationSeconds: 0, displayDuration: "A treasured moment", year: "2026",
-    relationshipDate: "", maturityLabel: "LOVE", tags: [category, "Ankit", "you"], location: "Our world", featured: index === 0,
-    allowLike: true, allowFavourite: true, endingCreditsId: index === 11 ? "main-credits" : "", sortOrder: index + 1,
+    longDescription: `A favourite moment in the story of Ankit and Shimran. Replace this sample with your own memory, photo, date, and message in the Media sheet.`,
+    mediaType: isCredits ? "credits" : isVideo ? "video" : "image", thumbnailUrl: hero, backdropUrl: hero, mobileBackdropUrl: hero,
+    videoUrl: isVideo ? `${basePath}/netflix-intro.mp4?demo-content=${index + 1}` : "", previewVideoUrl: "", posterUrl: hero,
+    durationSeconds: isVideo ? 30 : 0, displayDuration: isVideo ? "Sample video" : "A treasured moment", year: "2026",
+    relationshipDate: "", maturityLabel: "LOVE", tags: [category, "Ankit", "Shimran"], location: "Our world", featured: index === 0,
+    allowLike: true, allowFavourite: true, endingCreditsId: isVideo ? "main-credits" : "", sortOrder: index + 1,
   };
 }
 
-const categoryNames = ["Our Story", "Beautiful Memories", "Adventures Together", "Date Nights", "Funny Moments", "Forever and Always"];
-const titles = ["The Day It Began", "That Beautiful Smile", "Our Favourite Evening", "A Road Taken Together", "A Table for Two", "Laughing Until Midnight", "Sunsets and Promises", "The Little Things", "Miles of Memories", "Home Is You", "All Our Tomorrows", "To Be Continued"];
-const media = titles.map((title, index) => item(index, title, categoryNames[Math.floor(index / 2)]));
+const media = titles.map((title, index) => item(index, title));
+const playableMedia = media.filter((item) => item.mediaType !== "credits");
+const categories = [
+  {
+    id: "top-10-today", title: "Top 10 Shows Today", subtitle: "Today's most-loved memories", description: "The ten chapters at the top of your story today.",
+    sortOrder: 0, cardAspectRatio: "16:9", mediaIds: playableMedia.slice(0, 10).map((item) => item.id),
+  },
+  ...categoryNames.map((title, categoryIndex) => ({
+    id: title.toLowerCase().replaceAll(" ", "-").replace(/^the-/, ""), title, subtitle: "", description: "", sortOrder: categoryIndex + 1,
+    cardAspectRatio: "16:9",
+    mediaIds: Array.from({ length: 10 }, (_, rank) => playableMedia[(categoryIndex * 2 + rank) % playableMedia.length].id),
+  })),
+];
 
 export const sampleData: BootstrapData = {
   settings: {
-    siteTitle: "Ankit & you", partnerOneName: "Ankit", partnerTwoName: "you",
-    defaultTagline: "Every love story is beautiful, but ours is my favourite.", logoText: "OUR STORY", profileName: "Ankit & you",
+    siteTitle: "Ankit & Shimran", partnerOneName: "Ankit", partnerTwoName: "Shimran",
+    defaultTagline: "Every love story is beautiful, but ours is my favourite.", logoText: "OUR STORY", profileName: "Ankit & Shimran",
     profileAvatarUrl: hero, introEnabled: true, introDurationMs: 4000, introDisplayMode: "always", introAudioUrl: "",
     showNavigation: true, showSearch: true, showMyList: true, showContinueWatching: true, showCredits: true,
-    creditsMediaId: "memory-12", footerText: "Made with love, for us.", themePrimaryColor: "#e50914", themeBackgroundColor: "#141414",
+    creditsMediaId: "memory-20", footerText: "Made with love, for us.", themePrimaryColor: "#e50914", themeBackgroundColor: "#141414",
   },
   navigation: [
     { id: "home", label: "Home", targetType: "section", targetValue: "home", sortOrder: 1 },
@@ -34,21 +55,28 @@ export const sampleData: BootstrapData = {
     { id: "my-list", label: "My List", targetType: "section", targetValue: "my-list", sortOrder: 4 },
   ],
   hero: {
-    id: "main-hero", title: "The Story of Ankit & you", subtitle: "A Love Story", eyebrow: "A LOVE STORY",
+    id: "main-hero", title: "The Story of Ankit & Shimran", subtitle: "A Love Story", eyebrow: "A LOVE STORY",
     description: "From unexpected beginnings to unforgettable memories, this is the story of two people who found home in each other.",
     bannerUrl: hero, mobileBannerUrl: hero, titleLogoUrl: "", previewVideoUrl: "", mediaId: "memory-1",
-    playButtonText: "Play", infoButtonText: "More Info", metadataText: "2026 · A Lifetime Series · Romance",
+    playButtonText: "Play", infoButtonText: "More Info", metadataText: "2026 - A Lifetime Series - Romance",
   },
-  categories: categoryNames.map((title, index) => ({
-    id: title.toLowerCase().replaceAll(" ", "-"), title, subtitle: "", description: "", sortOrder: index + 1,
-    cardAspectRatio: "16:9", mediaIds: [media[index * 2].id, media[index * 2 + 1].id],
-  })),
+  categories,
   media,
   credits: [
-    ["Directed by", "God"], ["Cast", "Ankit and you"], ["Story by", "Our Memories"], ["Produced by", "Love, Patience and Support"],
-    ["Location", "Wherever We Are Together"], ["Soundtrack", "Our Favourite Songs"], ["Special Thanks", "Family and Friends"], ["Final Message", "To be continued forever..."],
-  ].map(([role, name], index) => ({ id: `credit-${index + 1}`, groupId: "main-credits", sectionTitle: "", role, name, message: "", imageUrl: index === 0 ? hero : "", sortOrder: index + 1 })),
-  contentVersion: "demo-1", generatedAt: new Date(0).toISOString(),
+    ["A Love Story for the Ages", "Directed by", "My Girlfriend, Shimran", "You are the heart behind every beautiful scene."],
+    ["The Leading Lady", "Starring", "Shimran", "The smile that makes every day feel cinematic."],
+    ["Her Favourite Person", "Starring", "Ankit", "Lucky enough to share this story with you."],
+    ["Written From the Heart", "Written by", "Ankit", "Every word is another way of saying I love you."],
+    ["Our Greatest Production", "Produced by", "Love, Trust and Endless Laughter", "Made together, one memory at a time."],
+    ["The Perfect Setting", "Location", "Wherever I Am With You", "Every place feels like home beside you."],
+    ["Songs That Feel Like Us", "Soundtrack", "Our Favourite Songs", "For every drive, dance and quiet evening."],
+    ["For Every Tomorrow", "Dedicated to", "Shimran", "For the life we are still writing together."],
+    ["One Last Thing", "Final Message", "I Choose You", "Yesterday, today, and every day after."],
+    ["Next Episode", "Coming Soon", "Forever With You", "This love story is only getting started."],
+  ].map(([sectionTitle, role, name, message], index) => ({
+    id: `credit-${index + 1}`, groupId: "main-credits", sectionTitle, role, name, message, imageUrl: index === 0 ? hero : "", sortOrder: index + 1,
+  })),
+  contentVersion: "demo-2", generatedAt: new Date(0).toISOString(),
 };
 
-export { scenes };
+export const scenes = ["#7d1821", "#19354c", "#70452e", "#285044", "#44263f", "#614d24"];

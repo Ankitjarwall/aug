@@ -51,7 +51,7 @@ export function NetflixGift() {
     {!!data.mediaIssues?.length && !issuesDismissed && <MediaIssuesModal issues={data.mediaIssues} onClose={() => setIssuesDismissed(true)} />}
     {selected && <MediaDetailsModal media={selected} state={byMediaId.get(selected.id)} onClose={() => setSelected(null)} onPlay={() => openPlayer(selected)} onLike={() => toggle(selected, "liked")} onFavourite={() => toggle(selected, "favourite")} />}
     {playing && <FullscreenPlayer media={playing} state={byMediaId.get(playing.id)} onClose={() => setPlaying(null)} onProgress={(changes) => saveState(playing.id, changes, "savePlayback")} onCredits={() => { setPlaying(null); setCredits(true); }} onPermissionError={() => setPermission(playing)} />}
-    {credits && <EndingCredits credits={data.credits} fallbackImage={data.hero.bannerUrl} onClose={() => setCredits(false)} />}
+    {credits && <EndingCredits credits={data.credits} fallbackImage={data.hero.bannerUrl} title={`${data.settings.partnerOneName} & ${data.settings.partnerTwoName}`} onClose={() => setCredits(false)} />}
     {permission && <PermissionModal media={permission} onClose={() => setPermission(null)} onRetry={() => { setPermission(null); setPlaying({ ...permission }); }} />}
   </>;
 }

@@ -36,7 +36,7 @@ test("opening intro fills the viewport without a skip action", async ({ page }, 
     expect(await page.evaluate(() => scrollY)).toBe(0);
   }
   await finishOpeningIntro(page);
-  await expect(page.getByRole("heading", { name: "The Story of Ankit & you" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The Story of Ankit & Shimran" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Our Story" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.style.overflow)).toBe("");
 });
@@ -52,15 +52,25 @@ test("desktop catalog starts below the hero actions", async ({ page }, testInfo)
   expect(firstHeading!.y).toBeGreaterThan(actions!.y + actions!.height + 20);
 });
 
+test("Top 10 and every Sheet category render ten items", async ({ page }) => {
+  const topTen = page.locator("#top-10-today");
+  await expect(topTen.getByRole("heading", { name: "Top 10 Shows Today" })).toBeVisible();
+  await expect(topTen.locator(".media-card")).toHaveCount(10);
+  expect(await topTen.locator(".top10-rank").allTextContents()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
+
+  for (const id of ["our-story", "beautiful-memories", "adventures-together", "date-nights", "funny-moments", "little-things", "milestones", "forever-and-always"]) {
+    await expect(page.locator(`#${id} .media-card`)).toHaveCount(10);
+  }
+});
 test("card opens details and Escape closes it", async ({ page }) => {
-  await page.getByRole("button", { name: "Open The Day It Began" }).click();
+  await page.getByRole("button", { name: "Open The Day It Began" }).first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
 });
 
 test("favourite updates My List and play opens the player", async ({ page }) => {
-  await page.getByRole("button", { name: "Open The Day It Began" }).click();
+  await page.getByRole("button", { name: "Open The Day It Began" }).first().click();
   await page.getByRole("button", { name: "Add to My List" }).click();
   await page.getByRole("button", { name: "Close details" }).click();
   await expect(page.getByRole("heading", { name: "My List" })).toBeVisible();
@@ -70,7 +80,7 @@ test("favourite updates My List and play opens the player", async ({ page }) => 
 });
 
 test("video plays an audible intro before uploaded content", async ({ page }) => {
-  await page.getByRole("button", { name: "Open The Day It Began" }).click();
+  await page.getByRole("button", { name: "Open The Day It Began" }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: "Play", exact: true }).click();
   const player = page.locator(".player");
   await expect(player).toHaveAttribute("data-phase", "intro");
@@ -83,7 +93,13 @@ test("video plays an audible intro before uploaded content", async ({ page }) =>
   });
   expect(introState).toMatchObject({ muted: false, src: expect.stringMatching(/netflix-intro\.mp4$/), objectFit: "cover", hasSkip: true });
   await expect(player).toHaveAttribute("data-phase", "content");
-  await expect(player.locator("video")).toHaveAttribute("src", /netflix-intro\.mp4\?content=1$/);
+  const contentVideo = player.locator("video");
+  await expect(contentVideo).toHaveAttribute("src", /netflix-intro[.]mp4[?]content=1$/);
+  await contentVideo.dispatchEvent("ended");
+  const credits = page.getByRole("dialog", { name: "Ending credits" });
+  await expect(credits).toBeVisible();
+  await expect(credits).toContainText("Ankit & Shimran");
+  await expect(credits).toContainText("My Girlfriend, Shimran");
 });
 
 test("mobile layout has no page overflow", async ({ page }, testInfo) => {
