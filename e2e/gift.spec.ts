@@ -4,7 +4,8 @@ import { sampleData } from "@/lib/sample-data";
 test.beforeEach(async ({ page }) => {
   await page.route("**/mock-api**", async (route) => {
     const action = new URL(route.request().url()).searchParams.get("action");
-    const data = action === "bootstrap" ? { ...sampleData, sessionToken: "test-token", sessionExpiresAt: Date.now() + 3600000 } : { saved: true };
+    const media = sampleData.media.map((item, index) => index === 0 ? { ...item, mediaType: "video" as const, videoUrl: "/netflix-intro.mp4?content=1" } : item);
+    const data = action === "bootstrap" ? { ...sampleData, media, sessionToken: "test-token", sessionExpiresAt: Date.now() + 3600000 } : { saved: true };
     await route.fulfill({ contentType: "application/json", body: JSON.stringify({ ok: true, data, meta: { apiVersion: "1", generatedAt: new Date().toISOString(), contentVersion: "test" }, error: null }) });
   });
   await page.addInitScript(() => { localStorage.clear(); sessionStorage.clear(); });
@@ -13,6 +14,10 @@ test.beforeEach(async ({ page }) => {
 
 test("intro can be skipped and dynamic rows render", async ({ page }, testInfo) => {
   await expect(page.getByRole("status", { name: /opening/i })).toBeVisible();
+  const openingVideo = page.locator(".intro-video");
+  await expect(openingVideo).toBeVisible();
+  expect(await openingVideo.evaluate((node: HTMLVideoElement) => node.muted)).toBe(true);
+  await expect(openingVideo).toHaveAttribute("src", /netflix-intro\.mp4$/);
   await expect.poll(() => page.evaluate(() => document.documentElement.style.overflow)).toBe("hidden");
   if (testInfo.project.name === "chromium") {
     await page.mouse.wheel(0, 800);
@@ -53,6 +58,20 @@ test("favourite updates My List and play opens the player", async ({ page }) => 
   await page.getByRole("button", { name: "Open The Day It Began" }).last().click();
   await page.getByRole("dialog").getByRole("button", { name: "Play", exact: true }).click();
   await expect(page.locator(".player")).toBeVisible();
+});
+
+test("video plays an audible intro before uploaded content", async ({ page }) => {
+  await page.getByRole("button", { name: "Skip intro" }).click();
+  await page.getByRole("button", { name: "Open The Day It Began" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Play", exact: true }).click();
+  const player = page.locator(".player");
+  await expect(player).toHaveAttribute("data-phase", "intro");
+  const preRoll = player.locator("video");
+  expect(await preRoll.evaluate((node: HTMLVideoElement) => node.muted)).toBe(false);
+  await expect(preRoll).toHaveAttribute("src", /netflix-intro\.mp4$/);
+  await preRoll.dispatchEvent("ended");
+  await expect(player).toHaveAttribute("data-phase", "content");
+  await expect(player.locator("video")).toHaveAttribute("src", /netflix-intro\.mp4\?content=1$/);
 });
 
 test("mobile layout has no page overflow", async ({ page }, testInfo) => {

@@ -14,17 +14,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 
 .intro { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; overflow: hidden; background: #000; opacity: 1; transition: opacity .4s ease; }
 .intro--leaving { opacity: 0; pointer-events: none; }
-.intro-mark { position: relative; width: 126px; height: 220px; filter: drop-shadow(0 0 20px #b20710); animation: markZoom 3.3s 2.2s cubic-bezier(.68,0,.32,1) forwards; }
-.intro-mark i, .intro-mark b { position: absolute; display: block; top: 0; width: 38px; height: 100%; background: linear-gradient(90deg, #780007, #e50914 55%, #8d060c); box-shadow: inset -5px 0 8px #520004; transform: scaleY(0); transform-origin: bottom; animation: ribbonRise .65s .18s cubic-bezier(.77,0,.18,1) forwards; }
-.intro-mark i:first-child { left: 0; }
-.intro-mark i:last-child { right: 0; animation-delay: .8s; }
-.intro-mark b { left: 44px; width: 40px; transform: skew(29deg) scaleY(0); transform-origin: top; background: linear-gradient(90deg, #8f0009, #f00b17 48%, #820007); animation: diagonal .8s .58s cubic-bezier(.7,0,.2,1) forwards; z-index: 2; }
-.intro-lights { position: absolute; inset: 0; opacity: 0; background: repeating-linear-gradient(90deg, #000 0 9%, #e50914 9.4% 9.65%, #ff7228 9.8% 9.95%, #6920c7 10.15% 10.3%, #1377ff 10.5% 10.7%, #000 11.2% 20%); filter: blur(5px); transform: scaleX(.04); animation: streaks 1.15s 2.45s ease-in-out forwards; }
+.intro-video { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
 .intro-skip { position: absolute; right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); border: 1px solid #777; background: rgba(0,0,0,.55); padding: 9px 15px; border-radius: 3px; cursor: pointer; }
-@keyframes ribbonRise { to { transform: scaleY(1); } }
-@keyframes diagonal { to { transform: skew(29deg) scaleY(1); } }
-@keyframes streaks { 0% { opacity: 0; transform: scaleX(.05); } 35% { opacity: 1; } 72% { opacity: .9; transform: scaleX(1.5); } 100% { opacity: 0; transform: scaleX(2); } }
-@keyframes markZoom { 60% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(19); } }
 
 .navbar { position: fixed; z-index: 60; top: 0; left: 0; right: 0; height: 68px; display: flex; align-items: center; gap: 30px; padding: 0 4%; background: linear-gradient(#080808cc, transparent); transition: background .25s; }
 .navbar--solid { background: #090909f5; }
@@ -111,6 +102,8 @@ footer { color: #808080; text-align: center; padding: 45px 20px; font-size: .85r
 .control-row span { font-size: .85rem; }.control-row b { margin-left: auto; }.control-row button:last-child { margin-left: 8px; }
 .drive-preview { width: 100%; height: 100%; border: 0; }
 .player-close { position: absolute; top: max(24px, env(safe-area-inset-top)); left: 3%; }
+.intro-play-button { position: absolute; left: 50%; top: 50%; width: 68px; height: 68px; display: grid; place-items: center; transform: translate(-50%, -50%); border: 2px solid #fff; border-radius: 50%; background: #0009; color: #fff; cursor: pointer; }
+.intro-play-button svg { width: 32px; height: 32px; }
 .permission-link { position: absolute; right: 3%; bottom: max(24px, env(safe-area-inset-bottom)); border: 0; border-bottom: 1px solid; background: none; cursor: pointer; }
 .photo-caption { position: absolute; left: 5%; bottom: 8%; max-width: 560px; text-shadow: 0 2px 8px #000; }.photo-caption h2 { font-size: 3rem; margin: 0; }
 

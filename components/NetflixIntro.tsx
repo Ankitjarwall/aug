@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { netflixIntroUrl } from "@/lib/assets";
 import type { Settings } from "@/types/content";
 
 function shouldShow(settings: Settings) {
@@ -12,15 +13,14 @@ function shouldShow(settings: Settings) {
 
 export function NetflixIntro({ settings, onDone }: { settings: Settings; onDone: () => void }) {
   const [visible, setVisible] = useState(true);
+
   useEffect(() => {
     if (!shouldShow(settings) || matchMedia("(prefers-reduced-motion: reduce)").matches) { onDone(); return; }
     const rootOverflow = document.documentElement.style.overflow;
     const bodyOverflow = document.body.style.overflow;
     document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
-    const timer = setTimeout(() => finish(false), Math.max(1200, settings.introDurationMs));
     return () => {
-      clearTimeout(timer);
       document.documentElement.style.overflow = rootOverflow;
       document.body.style.overflow = bodyOverflow;
     };
@@ -32,14 +32,13 @@ export function NetflixIntro({ settings, onDone }: { settings: Settings; onDone:
     sessionStorage.setItem("gift-intro-seen", "1");
     if (settings.introDisplayMode === "once_per_device") localStorage.setItem("gift-intro-seen", "1");
     setVisible(false);
-    setTimeout(onDone, skipped ? 100 : 420);
+    setTimeout(onDone, skipped ? 100 : 320);
   }
 
   if (!visible) return <div className="intro intro--leaving" aria-hidden="true" />;
   return (
-    <div className="intro" role="status" aria-label="Opening Ankit and you's story">
-      <div className="intro-lights" aria-hidden="true" />
-      <div className="intro-mark" aria-hidden="true"><i /><b /><i /></div>
+    <div className="intro" role="status" aria-label={"Opening " + settings.siteTitle}>
+      <video className="intro-video" src={netflixIntroUrl} autoPlay muted playsInline preload="auto" onEnded={() => finish(false)} onError={() => finish(false)} />
       <button className="intro-skip" onClick={() => finish(true)}>Skip intro</button>
     </div>
   );
