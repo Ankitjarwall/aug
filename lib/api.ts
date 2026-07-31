@@ -4,7 +4,7 @@ import type { UserMediaState } from "@/types/state";
 
 export class ConfigurationError extends Error {}
 export class NetworkError extends Error {}
-export class ApiError extends Error { constructor(message: string, readonly code: string) { super(message); } }
+export class ApiError extends Error { constructor(message: string, readonly code: string, readonly requestId?: string) { super(message); } }
 export class MediaPermissionError extends Error {}
 export class MediaPlaybackError extends Error {}
 export class DataValidationError extends Error {}
@@ -35,8 +35,8 @@ async function request<T>(action: string, options?: { method?: "GET" | "POST"; b
     if (!response.ok) throw new NetworkError(`The content service returned HTTP ${response.status}.`);
     const payload = parseApiResponse<T>(await response.json());
     if (!payload.ok || payload.data === null) {
-      if (payload.error?.code === "RATE_LIMITED") throw new RateLimitError(payload.error.message, payload.error.code);
-      throw new ApiError(payload.error?.message ?? "The content service rejected the request.", payload.error?.code ?? "API_ERROR");
+      if (payload.error?.code === "RATE_LIMITED") throw new RateLimitError(payload.error.message, payload.error.code, payload.meta.requestId);
+      throw new ApiError(payload.error?.message ?? "The content service rejected the request.", payload.error?.code ?? "API_ERROR", payload.meta.requestId);
     }
     return payload.data;
   } catch (error) {

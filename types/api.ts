@@ -2,6 +2,7 @@ export interface ApiMeta {
   apiVersion: string;
   generatedAt: string;
   contentVersion: string;
+  requestId?: string;
 }
 
 export interface ApiErrorBody {

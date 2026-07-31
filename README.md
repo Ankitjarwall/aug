@@ -63,3 +63,16 @@ No Sheet ID, Drive folder ID, `APP_SECRET`, or other private backend configurati
 - Failed state writes stay optimistic locally. Reopening the page restores the local copy; the Apps Script rate limit and lock protect Sheet writes.
 - A local demo image is included so the static site works before Drive is configured. Replace it in Sheets for the live site.
 - Apps Script cannot provide strong access control for a public, no-login write API and Google Drive can still throttle large public video playback. For sustained traffic, use a proper authenticated media backend rather than Apps Script.
+
+## Apps Script debugging
+
+Structured debugging is enabled in the code block at the top of `apps-script/Config.gs`:
+
+```javascript
+DEBUG_ENABLED: true,
+DEBUG_LEVEL: "DEBUG"
+```
+
+Use `DEBUG` while setting up, `INFO` for normal production diagnostics, `WARN` for warnings/errors only, or set `DEBUG_ENABLED` to `false` to disable logs. Logs are JSON and include `requestId`, `action`, `stage`, `elapsedMs`, message, and sanitized context. Session tokens, signing secrets, authorization values, and full visitor IDs are redacted.
+
+To inspect a failure, open the Apps Script editor, select **Executions**, open the failed run, and expand **Logs**. Filter or search the log output using the `requestId` returned in the API response metadata. Key stages include `request.*`, `security.*`, `bootstrap.*`, `sheet.*`, `state.*`, `drive.*`, `validation.*`, `setup.*`, and `cache.*`.
