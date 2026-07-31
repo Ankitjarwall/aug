@@ -17,7 +17,9 @@ var SCHEMA = {
   Settings: ["key", "value", "description", "enabled"],
   Navigation: ["navigation_id", "label", "target_type", "target_value", "sort_order", "enabled"],
   Hero: ["hero_id", "title", "subtitle", "eyebrow", "description", "banner_drive_url", "banner_mobile_drive_url", "title_logo_drive_url", "preview_video_drive_url", "media_id", "play_button_text", "info_button_text", "metadata_text", "sort_order", "enabled", "updated_at"],
+  Profiles: ["profile_id", "title", "avatar_drive_url", "hero_id", "sort_order", "enabled", "updated_at"],
   Categories: ["category_id", "title", "subtitle", "description", "sort_order", "enabled", "show_on_home", "card_aspect_ratio", "updated_at"],
+  ProfileCategories: ["profile_category_id", "profile_id", "category_id", "sort_order", "enabled"],
   Media: ["media_id", "title", "short_title", "description", "long_description", "media_type", "thumbnail_drive_url", "backdrop_drive_url", "mobile_backdrop_drive_url", "video_drive_url", "preview_video_drive_url", "poster_drive_url", "duration_seconds", "display_duration", "year", "relationship_date", "maturity_label", "tags", "location", "featured", "allow_like", "allow_favourite", "show_in_search", "ending_credits_id", "sort_order", "enabled", "updated_at"],
   CategoryItems: ["category_item_id", "category_id", "media_id", "sort_order", "enabled"],
   Credits: ["credit_id", "credits_group_id", "section_title", "role", "name", "message", "image_drive_url", "sort_order", "enabled"],
@@ -28,7 +30,7 @@ var SCHEMA = {
 
 var ALLOWED_GET = ["health", "bootstrap", "content", "media", "validateMedia", "state", "credits"];
 var ALLOWED_POST = ["createSession", "saveState", "savePlayback", "toggleLike", "toggleFavourite", "logEvent", "refreshCache"];
-var ALLOWED_EVENTS = ["site_open", "intro_complete", "intro_skip", "hero_play", "card_open", "video_start", "video_pause", "video_progress", "video_complete", "like", "unlike", "favourite", "unfavourite", "credits_open", "api_error"];
+var ALLOWED_EVENTS = ["site_open", "intro_complete", "intro_skip", "profile_select", "hero_play", "card_open", "video_start", "video_pause", "video_progress", "video_complete", "like", "unlike", "favourite", "unfavourite", "credits_open", "api_error"];
 
 function getConfig_() {
   debugDebug_("config.load", "Loading code configuration.", { apiVersion: NETFLIX_GIFT_CONFIG.API_VERSION, cacheSeconds: NETFLIX_GIFT_CONFIG.CACHE_SECONDS, debugLevel: NETFLIX_GIFT_CONFIG.DEBUG_LEVEL });

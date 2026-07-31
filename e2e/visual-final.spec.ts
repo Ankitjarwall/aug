@@ -1,9 +1,22 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
+async function selectCurrentProfile(page: Page) {
+  await page.getByRole("button", { name: "Currently We", exact: true }).click();
+  await expect(page.locator(".profile-gate")).toBeHidden();
+}
+
+test("final profile chooser visual", async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Who's watching?" })).toBeVisible();
+  await expect(page.locator(".profile-card")).toHaveCount(3);
+  await page.screenshot({ path: `test-results/profile-${testInfo.project.name}.png`, fullPage: true });
+});
 test("final desktop visual", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
+  await selectCurrentProfile(page);
   await expect(page.locator(".site")).toHaveClass(/site--visible/);
   await expect(page.getByRole("heading", { name: "The Story of Ankit & Shimran" })).toBeVisible();
   await page.waitForTimeout(500);
@@ -14,6 +27,7 @@ test("final mobile visual", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
+  await selectCurrentProfile(page);
   await expect(page.locator(".site")).toHaveClass(/site--visible/);
   await expect(page.getByRole("heading", { name: "The Story of Ankit & Shimran" })).toBeVisible();
   await page.waitForTimeout(500);
@@ -23,6 +37,7 @@ test("final credits visual", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
+  await selectCurrentProfile(page);
   await expect(page.locator(".site")).toHaveClass(/site--visible/);
   await page.getByRole("button", { name: "Open The Day It Began" }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: "Play", exact: true }).click();

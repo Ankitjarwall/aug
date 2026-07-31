@@ -1,7 +1,12 @@
-import type { BootstrapData, MediaItem } from "@/types/content";
+import type { BootstrapData, Hero, MediaItem, Profile } from "@/types/content";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const hero = `${basePath}/demo/romantic-hero.png`;
+const profileImages = [
+  `${basePath}/profiles/profile-2020.jpg`,
+  `${basePath}/profiles/profile-current.jpg`,
+  `${basePath}/profiles/profile-future.jpg`,
+];
 const videoIndexes = new Set([0, 6, 9, 12, 18]);
 const categoryNames = ["Our Story", "Beautiful Memories", "Adventures Together", "Date Nights", "Funny Moments", "The Little Things", "Milestones", "Forever and Always"];
 const titles = [
@@ -40,6 +45,32 @@ const categories = [
   })),
 ];
 
+const heroes: Hero[] = [
+  {
+    id: "sample-hero-2020", title: "Where Our Story Began", subtitle: "In 2020 We", eyebrow: "THE FIRST CHAPTER",
+    description: "The first conversations, favourite smiles, and little moments that turned 2020 into the beginning of us.",
+    bannerUrl: profileImages[0], mobileBannerUrl: profileImages[0], titleLogoUrl: "", previewVideoUrl: "", mediaId: "memory-1",
+    playButtonText: "Play", infoButtonText: "More Info", metadataText: "2020 - The Beginning - Romance",
+  },
+  {
+    id: "main-hero", title: "The Story of Ankit & Shimran", subtitle: "A Love Story", eyebrow: "A LOVE STORY",
+    description: "From unexpected beginnings to unforgettable memories, this is the story of two people who found home in each other.",
+    bannerUrl: hero, mobileBannerUrl: hero, titleLogoUrl: "", previewVideoUrl: "", mediaId: "memory-1",
+    playButtonText: "Play", infoButtonText: "More Info", metadataText: "Now - A Lifetime Series - Romance",
+  },
+  {
+    id: "sample-hero-future", title: "All Our Tomorrows", subtitle: "In Future We", eyebrow: "THE STORY CONTINUES",
+    description: "A glimpse of the adventures, milestones, quiet mornings, and beautiful future still waiting for us.",
+    bannerUrl: profileImages[2], mobileBannerUrl: profileImages[2], titleLogoUrl: "", previewVideoUrl: "", mediaId: "memory-19",
+    playButtonText: "Play", infoButtonText: "More Info", metadataText: "Coming Soon - Forever - Romance",
+  },
+];
+
+const profiles: Profile[] = [
+  { id: "sample-profile-2020", title: "In 2020 We", avatarUrl: profileImages[0], heroId: "sample-hero-2020", categoryIds: ["our-story", "beautiful-memories", "date-nights", "funny-moments", "little-things"], sortOrder: 1 },
+  { id: "sample-profile-current", title: "Currently We", avatarUrl: profileImages[1], heroId: "main-hero", categoryIds: ["top-10-today", "beautiful-memories", "adventures-together", "date-nights", "little-things"], sortOrder: 2 },
+  { id: "sample-profile-future", title: "In Future We", avatarUrl: profileImages[2], heroId: "sample-hero-future", categoryIds: ["adventures-together", "little-things", "milestones", "forever-and-always", "beautiful-memories"], sortOrder: 3 },
+];
 export const sampleData: BootstrapData = {
   settings: {
     siteTitle: "Ankit & Shimran", partnerOneName: "Ankit", partnerTwoName: "Shimran",
@@ -54,12 +85,10 @@ export const sampleData: BootstrapData = {
     { id: "memories", label: "Memories", targetType: "category", targetValue: "beautiful-memories", sortOrder: 3 },
     { id: "my-list", label: "My List", targetType: "section", targetValue: "my-list", sortOrder: 4 },
   ],
-  hero: {
-    id: "main-hero", title: "The Story of Ankit & Shimran", subtitle: "A Love Story", eyebrow: "A LOVE STORY",
-    description: "From unexpected beginnings to unforgettable memories, this is the story of two people who found home in each other.",
-    bannerUrl: hero, mobileBannerUrl: hero, titleLogoUrl: "", previewVideoUrl: "", mediaId: "memory-1",
-    playButtonText: "Play", infoButtonText: "More Info", metadataText: "2026 - A Lifetime Series - Romance",
-  },
+  hero: heroes[1],
+  heroes,
+  profiles,
+
   categories,
   media,
   credits: [
@@ -76,7 +105,7 @@ export const sampleData: BootstrapData = {
   ].map(([sectionTitle, role, name, message], index) => ({
     id: `credit-${index + 1}`, groupId: "main-credits", sectionTitle, role, name, message, imageUrl: index === 0 ? hero : "", sortOrder: index + 1,
   })),
-  contentVersion: "demo-2", generatedAt: new Date(0).toISOString(),
+  contentVersion: "demo-3", generatedAt: new Date(0).toISOString(),
 };
 
 export const scenes = ["#7d1821", "#19354c", "#70452e", "#285044", "#44263f", "#614d24"];

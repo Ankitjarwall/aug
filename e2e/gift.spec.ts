@@ -7,6 +7,12 @@ async function finishOpeningIntro(page: Page) {
   await intro.dispatchEvent("ended");
   await expect(page.locator(".intro")).toBeHidden();
 }
+async function selectProfile(page: Page, title = "Currently We") {
+  await expect(page.getByRole("heading", { name: "Who's watching?" })).toBeVisible();
+  await page.getByRole("button", { name: title, exact: true }).click();
+  await expect(page.locator(".profile-gate")).toBeHidden();
+}
+
 test.beforeEach(async ({ page }, testInfo) => {
   if (!testInfo.title.startsWith("opening intro fills")) await page.emulateMedia({ reducedMotion: "reduce" });
   await page.route("**/mock-api**", async (route) => {
@@ -17,6 +23,7 @@ test.beforeEach(async ({ page }, testInfo) => {
   });
   await page.addInitScript(() => { localStorage.clear(); sessionStorage.clear(); });
   await page.goto("/");
+  if (!testInfo.title.startsWith("opening intro fills") && !testInfo.title.startsWith("profiles ")) await selectProfile(page);
 });
 
 test("opening intro fills the viewport without a skip action", async ({ page }, testInfo) => {
@@ -36,8 +43,10 @@ test("opening intro fills the viewport without a skip action", async ({ page }, 
     expect(await page.evaluate(() => scrollY)).toBe(0);
   }
   await finishOpeningIntro(page);
+  await expect(page.getByRole("heading", { name: "Who's watching?" })).toBeVisible();
+  await selectProfile(page);
   await expect(page.getByRole("heading", { name: "The Story of Ankit & Shimran" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Our Story" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Top 10 Shows Today" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.style.overflow)).toBe("");
 });
 
@@ -45,6 +54,7 @@ test("desktop catalog starts below the hero actions", async ({ page }, testInfo)
   test.skip(testInfo.project.name !== "chromium", "Desktop-only assertion");
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.reload();
+  await selectProfile(page);
   const actions = await page.locator(".hero-actions").boundingBox();
   const firstHeading = await page.locator(".content-row h2").first().boundingBox();
   expect(actions).not.toBeNull();
@@ -52,15 +62,41 @@ test("desktop catalog starts below the hero actions", async ({ page }, testInfo)
   expect(firstHeading!.y).toBeGreaterThan(actions!.y + actions!.height + 20);
 });
 
-test("Top 10 and every Sheet category render ten items", async ({ page }) => {
+test("Top 10 and every selected profile category render ten items", async ({ page }) => {
   const topTen = page.locator("#top-10-today");
   await expect(topTen.getByRole("heading", { name: "Top 10 Shows Today" })).toBeVisible();
   await expect(topTen.locator(".media-card")).toHaveCount(10);
   expect(await topTen.locator(".top10-rank").allTextContents()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
 
-  for (const id of ["our-story", "beautiful-memories", "adventures-together", "date-nights", "funny-moments", "little-things", "milestones", "forever-and-always"]) {
+  for (const id of ["beautiful-memories", "adventures-together", "date-nights", "little-things"]) {
     await expect(page.locator(`#${id} .media-card`)).toHaveCount(10);
   }
+});
+test("profiles select distinct Sheet-managed catalogs", async ({ page }, testInfo) => {
+  const chooser = page.locator(".profile-gate");
+  await expect(chooser).toBeVisible();
+  await expect(chooser.locator(".profile-card")).toHaveCount(3);
+  if (testInfo.project.name === "mobile") {
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+  }
+
+  await selectProfile(page, "In 2020 We");
+  await expect(page.getByRole("heading", { name: "Where Our Story Began" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Our Story", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Top 10 Shows Today" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Switch profile" }).click();
+  await selectProfile(page, "Currently We");
+  await expect(page.getByRole("heading", { name: "The Story of Ankit & Shimran" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Top 10 Shows Today" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Our Story", exact: true })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Switch profile" }).click();
+  await selectProfile(page, "In Future We");
+  await expect(page.getByRole("heading", { name: "All Our Tomorrows" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Forever and Always" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Top 10 Shows Today" })).toHaveCount(0);
 });
 test("card opens details and Escape closes it", async ({ page }) => {
   await page.getByRole("button", { name: "Open The Day It Began" }).first().click();
@@ -94,6 +130,8 @@ test("opening intro fills then hands off to looping background music", async ({ 
   expect(await music.getAttribute("data-play-calls")).toBe("0");
   await finishOpeningIntro(page);
   await expect.poll(() => music.getAttribute("data-play-calls")).toBe("1");
+  await selectProfile(page);
+  expect(await music.getAttribute("data-play-calls")).toBe("1");
 
   await page.getByRole("button", { name: "Open The Day It Began" }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: "Play", exact: true }).click();

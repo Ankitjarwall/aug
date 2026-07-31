@@ -54,7 +54,7 @@ function validateAllMedia() {
   var ownsContext = !DEBUG_CONTEXT_.requestId;
   if (ownsContext) startDebugExecution_("validateAllMedia", "editor", {});
   var startedAt = Date.now(), targets = [], definitions = [
-    ["Settings", "profile_avatar_drive_url", "key"], ["Settings", "intro_audio_drive_url", "key"], ["Hero", "banner_drive_url", "title"], ["Hero", "banner_mobile_drive_url", "title"], ["Hero", "title_logo_drive_url", "title"], ["Hero", "preview_video_drive_url", "title"],
+    ["Settings", "profile_avatar_drive_url", "key"], ["Settings", "intro_audio_drive_url", "key"], ["Profiles", "avatar_drive_url", "title"], ["Hero", "banner_drive_url", "title"], ["Hero", "banner_mobile_drive_url", "title"], ["Hero", "title_logo_drive_url", "title"], ["Hero", "preview_video_drive_url", "title"],
     ["Media", "thumbnail_drive_url", "title"], ["Media", "backdrop_drive_url", "title"], ["Media", "mobile_backdrop_drive_url", "title"], ["Media", "video_drive_url", "title"], ["Media", "preview_video_drive_url", "title"], ["Media", "poster_drive_url", "title"], ["Credits", "image_drive_url", "name"]
   ];
   debugInfo_("validation.start", "Collecting media references for validation.", { definitionCount: definitions.length });

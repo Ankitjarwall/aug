@@ -54,7 +54,19 @@ function applySheetRules_(sheet, headers) {
       sheet.getRange(2, col, rows - 1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(enums[name], true).setAllowInvalid(false).build());
     }
   });
-  if (sheet.getName() === "Settings" && sheet.getLastRow() > 1) {
+  var referenceDefinitions = {
+    Profiles: { hero_id: "Hero" },
+    ProfileCategories: { profile_id: "Profiles", category_id: "Categories" }
+  };
+  var sheetReferences = referenceDefinitions[sheet.getName()] || {};
+  Object.keys(sheetReferences).forEach(function(header) {
+    var column = headers.indexOf(header) + 1, targetSheet = sheet.getParent().getSheetByName(sheetReferences[header]);
+    if (column && targetSheet) {
+      var targetRows = Math.max(2, targetSheet.getLastRow());
+      sheet.getRange(2, column, rows - 1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInRange(targetSheet.getRange(2, 1, targetRows - 1, 1), true).setAllowInvalid(false).build());
+      dropdownColumns.push(header);
+    }
+  });  if (sheet.getName() === "Settings" && sheet.getLastRow() > 1) {
     var keys = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues(), valueColumn = headers.indexOf("value") + 1;
     var booleanSettings = ["intro_enabled", "hero_autoplay_preview", "show_navigation", "show_search", "show_my_list", "show_continue_watching", "show_credits"];
     keys.forEach(function(row, index) {
@@ -67,8 +79,10 @@ function applySheetRules_(sheet, headers) {
       if (rule) target.setDataValidation(rule);
     });
   }
-  var enabledCol = headers.indexOf("enabled") + 1;
-  if (enabledCol) sheet.setConditionalFormatRules([SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied("=$" + columnLetter_(enabledCol) + "2=FALSE").setBackground("#3d171a").setRanges([sheet.getRange(2, 1, rows - 1, headers.length)]).build()]);
+  var enabledCol = headers.indexOf("enabled") + 1, conditionalRules = [];
+  if (enabledCol) conditionalRules.push(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied("=$" + columnLetter_(enabledCol) + "2=FALSE").setBackground("#3d171a").setRanges([sheet.getRange(2, 1, rows - 1, headers.length)]).build());
+  if (sheet.getName() === "Profiles" && enabledCol) conditionalRules.push(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied("=AND($" + columnLetter_(enabledCol) + "2=TRUE,COUNTIF($" + columnLetter_(enabledCol) + "$2:$" + columnLetter_(enabledCol) + "2,TRUE)>5)").setBackground("#6b2c00").setRanges([sheet.getRange(2, 1, rows - 1, headers.length)]).build());
+  if (conditionalRules.length) sheet.setConditionalFormatRules(conditionalRules);
   var filter = sheet.getFilter(), filterUpdated = false;
   if (!filter || filter.getRange().getNumRows() !== rows || filter.getRange().getNumColumns() !== headers.length) {
     var savedCriteria = {};
@@ -112,6 +126,11 @@ function insertSampleContent() {
       "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=1600&q=85",
       "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=85",
       "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=85"
+    ];
+    var profileImages = [
+      "https://ankitjarwall.github.io/aug/profiles/profile-2020.jpg",
+      "https://ankitjarwall.github.io/aug/profiles/profile-current.jpg",
+      "https://ankitjarwall.github.io/aug/profiles/profile-future.jpg"
     ];
     var demoVideos = {
       0: ["https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", 30],
@@ -158,12 +177,19 @@ function insertSampleContent() {
       ["my-list", "My List", "section", "my-list", 7, true]
     ], 0);
 
-    sampleResults.Hero = upsertSampleRows_(ss.getSheetByName("Hero"), [[
-      "main-hero", "The Story of Ankit & Shimran", "A Love Story", "A LOVE STORY",
-      "From unexpected beginnings to unforgettable memories, this is the story of two people who found home in each other.",
-      demoImages[0], demoImages[0], "", demoVideos[0][0], "memory-1", "Play", "More Info",
-      "2026 - A Lifetime Series - Romance", 1, true, new Date()
-    ]], 0);
+    var profileRows = [
+      ["sample-profile-2020", "In 2020 We", profileImages[0], "sample-hero-2020", 1, true, new Date()],
+      ["sample-profile-current", "Currently We", profileImages[1], "main-hero", 2, true, new Date()],
+      ["sample-profile-future", "In Future We", profileImages[2], "sample-hero-future", 3, true, new Date()]
+    ];
+    sampleResults.Profiles = upsertSampleRows_(ss.getSheetByName("Profiles"), profileRows, 0);
+
+    var heroRows = [
+      ["sample-hero-2020", "Where Our Story Began", "In 2020 We", "THE FIRST CHAPTER", "The first conversations, favourite smiles, and little moments that turned 2020 into the beginning of us.", profileImages[0], profileImages[0], "", demoVideos[0][0], "memory-1", "Play", "More Info", "2020 - The Beginning - Romance", 1, true, new Date()],
+      ["main-hero", "The Story of Ankit & Shimran", "A Love Story", "A LOVE STORY", "From unexpected beginnings to unforgettable memories, this is the story of two people who found home in each other.", demoImages[3], demoImages[3], "", demoVideos[0][0], "memory-1", "Play", "More Info", "Now - A Lifetime Series - Romance", 2, true, new Date()],
+      ["sample-hero-future", "All Our Tomorrows", "In Future We", "THE STORY CONTINUES", "A glimpse of the adventures, milestones, quiet mornings, and beautiful future still waiting for us.", profileImages[2], profileImages[2], "", demoVideos[18][0], "memory-19", "Play", "More Info", "Coming Soon - Forever - Romance", 3, true, new Date()]
+    ];
+    sampleResults.Hero = upsertSampleRows_(ss.getSheetByName("Hero"), heroRows, 0);
 
     var categories = [
       ["top-10-today", "Top 10 Shows Today", "Today's most-loved memories", "The ten chapters at the top of your story today.", 0, true, true, "16:9", new Date()],
@@ -177,6 +203,18 @@ function insertSampleContent() {
       ["forever-and-always", "Forever and Always", "The story continues", "Promises, dreams, and everything still waiting ahead.", 8, true, true, "16:9", new Date()]
     ];
     sampleResults.Categories = upsertSampleRows_(ss.getSheetByName("Categories"), categories, 0);
+
+    var profileCategorySeeds = {
+      "sample-profile-2020": ["our-story", "beautiful-memories", "date-nights", "funny-moments", "little-things"],
+      "sample-profile-current": ["top-10-today", "beautiful-memories", "adventures-together", "date-nights", "little-things"],
+      "sample-profile-future": ["adventures-together", "little-things", "milestones", "forever-and-always", "beautiful-memories"]
+    };
+    var profileCategoryRows = [];
+    Object.keys(profileCategorySeeds).forEach(function(profileId) {
+      profileCategorySeeds[profileId].forEach(function(categoryId, index) { profileCategoryRows.push(["sample-profile-category-" + profileId + "-" + (index + 1), profileId, categoryId, index + 1, true]); });
+    });
+    sampleResults.ProfileCategories = replaceOwnedSampleRows_(ss.getSheetByName("ProfileCategories"), profileCategoryRows, 0, function(id) { return id.indexOf("sample-profile-category-") === 0; });
+    debugInfo_("samples.profiles.built", "Built sample profile catalog mappings.", { profileCount: profileRows.length, profileCategoryCount: profileCategoryRows.length, maxProfiles: 5 });
 
     var mediaSeeds = [
       ["The Day It Began", "our-story", "Where your story first started."],
@@ -274,7 +312,7 @@ function insertSampleContent() {
     sampleResults.ValidationLog = upsertSampleRows_(ss.getSheetByName("ValidationLog"), validationRows, 0);
     Object.keys(SCHEMA).forEach(function(sheetName) { applySheetRules_(ss.getSheetByName(sheetName), SCHEMA[sheetName]); });
     clearContentCache_();
-    debugInfo_("samples.complete", "Sample content check completed.", { candidates: { settings: 24, navigation: 7, heroes: 1, categories: categories.length, media: mediaRows.length, categoryItems: categoryItemRows.length, credits: creditRows.length, userState: userStateRows.length, activityLog: activityRows.length, validationLog: validationRows.length }, writes: sampleResults, spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6), durationMs: Date.now() - startedAt });
+    debugInfo_("samples.complete", "Sample content check completed.", { candidates: { settings: 24, navigation: 7, heroes: heroRows.length, profiles: profileRows.length, profileCategories: profileCategoryRows.length, categories: categories.length, media: mediaRows.length, categoryItems: categoryItemRows.length, credits: creditRows.length, userState: userStateRows.length, activityLog: activityRows.length, validationLog: validationRows.length }, writes: sampleResults, spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6), durationMs: Date.now() - startedAt });
     if (ownsContext) finishDebugExecution_(true, { writes: sampleResults, spreadsheetName: ss.getName(), sheetIdSuffix: ss.getId().slice(-6) });
   } catch (error) {
     debugError_("samples.error", "Sample content insertion failed.", error, { durationMs: Date.now() - startedAt });

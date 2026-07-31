@@ -47,6 +47,14 @@ export interface Hero {
   metadataText: string;
 }
 
+export interface Profile {
+  id: string;
+  title: string;
+  avatarUrl: string;
+  heroId: string;
+  categoryIds: string[];
+  sortOrder: number;
+}
 export interface Category {
   id: string;
   title: string;
@@ -102,6 +110,8 @@ export interface BootstrapData {
   settings: Settings;
   navigation: NavigationItem[];
   hero: Hero;
+  heroes?: Hero[];
+  profiles?: Profile[];
   categories: Category[];
   media: MediaItem[];
   credits: Credit[];
