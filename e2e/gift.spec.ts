@@ -11,11 +11,29 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
 });
 
-test("intro can be skipped and dynamic rows render", async ({ page }) => {
+test("intro can be skipped and dynamic rows render", async ({ page }, testInfo) => {
   await expect(page.getByRole("status", { name: /opening/i })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.style.overflow)).toBe("hidden");
+  if (testInfo.project.name === "chromium") {
+    await page.mouse.wheel(0, 800);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+  }
   await page.getByRole("button", { name: "Skip intro" }).click();
   await expect(page.getByRole("heading", { name: "The Story of Ankit & Shimran" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Our Story" })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.style.overflow)).toBe("");
+});
+
+test("desktop catalog starts below the hero actions", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "Desktop-only assertion");
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.reload();
+  await page.getByRole("button", { name: "Skip intro" }).click();
+  const actions = await page.locator(".hero-actions").boundingBox();
+  const firstHeading = await page.locator(".content-row h2").first().boundingBox();
+  expect(actions).not.toBeNull();
+  expect(firstHeading).not.toBeNull();
+  expect(firstHeading!.y).toBeGreaterThan(actions!.y + actions!.height + 20);
 });
 
 test("card opens details and Escape closes it", async ({ page }) => {

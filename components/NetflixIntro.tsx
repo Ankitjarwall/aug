@@ -14,8 +14,16 @@ export function NetflixIntro({ settings, onDone }: { settings: Settings; onDone:
   const [visible, setVisible] = useState(true);
   useEffect(() => {
     if (!shouldShow(settings) || matchMedia("(prefers-reduced-motion: reduce)").matches) { onDone(); return; }
+    const rootOverflow = document.documentElement.style.overflow;
+    const bodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
     const timer = setTimeout(() => finish(false), Math.max(1200, settings.introDurationMs));
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      document.documentElement.style.overflow = rootOverflow;
+      document.body.style.overflow = bodyOverflow;
+    };
     // onDone is intentionally controlled by the parent render lifecycle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
