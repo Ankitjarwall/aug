@@ -37,7 +37,7 @@ export function NetflixIntro({ settings, onDone }: { settings: Settings; onDone:
 
   if (!visible) return <div className="intro intro--leaving" aria-hidden="true" />;
   return (
-    <div className="intro" role="status" aria-label="Opening Ankit and Shimran's story">
+    <div className="intro" role="status" aria-label="Opening Ankit and you's story">
       <div className="intro-lights" aria-hidden="true" />
       <div className="intro-mark" aria-hidden="true"><i /><b /><i /></div>
       <button className="intro-skip" onClick={() => finish(true)}>Skip intro</button>

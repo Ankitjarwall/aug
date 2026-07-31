@@ -7,10 +7,10 @@ const scenes = ["#7d1821", "#19354c", "#70452e", "#285044", "#44263f", "#614d24"
 function item(index: number, title: string, category: string): MediaItem {
   return {
     id: `memory-${index + 1}`, title, shortTitle: title, description: `A chapter from ${category.toLowerCase()}, kept close forever.`,
-    longDescription: `A favourite moment in the story of Ankit and Shimran. Replace this sample with your own memory, photo, date, and message in the Media sheet.`,
+    longDescription: `A favourite moment in the story of Ankit and you. Replace this sample with your own memory, photo, date, and message in the Media sheet.`,
     mediaType: index === 11 ? "credits" : "image", thumbnailUrl: hero, backdropUrl: hero, mobileBackdropUrl: hero,
     videoUrl: "", previewVideoUrl: "", posterUrl: hero, durationSeconds: 0, displayDuration: "A treasured moment", year: "2026",
-    relationshipDate: "", maturityLabel: "LOVE", tags: [category, "Ankit", "Shimran"], location: "Our world", featured: index === 0,
+    relationshipDate: "", maturityLabel: "LOVE", tags: [category, "Ankit", "you"], location: "Our world", featured: index === 0,
     allowLike: true, allowFavourite: true, endingCreditsId: index === 11 ? "main-credits" : "", sortOrder: index + 1,
   };
 }
@@ -21,8 +21,8 @@ const media = titles.map((title, index) => item(index, title, categoryNames[Math
 
 export const sampleData: BootstrapData = {
   settings: {
-    siteTitle: "Ankit & Shimran", partnerOneName: "Ankit", partnerTwoName: "Shimran",
-    defaultTagline: "Every love story is beautiful, but ours is my favourite.", logoText: "OUR STORY", profileName: "Ankit & Shimran",
+    siteTitle: "Ankit & you", partnerOneName: "Ankit", partnerTwoName: "you",
+    defaultTagline: "Every love story is beautiful, but ours is my favourite.", logoText: "OUR STORY", profileName: "Ankit & you",
     profileAvatarUrl: hero, introEnabled: true, introDurationMs: 4000, introDisplayMode: "always", introAudioUrl: "",
     showNavigation: true, showSearch: true, showMyList: true, showContinueWatching: true, showCredits: true,
     creditsMediaId: "memory-12", footerText: "Made with love, for us.", themePrimaryColor: "#e50914", themeBackgroundColor: "#141414",
@@ -34,7 +34,7 @@ export const sampleData: BootstrapData = {
     { id: "my-list", label: "My List", targetType: "section", targetValue: "my-list", sortOrder: 4 },
   ],
   hero: {
-    id: "main-hero", title: "The Story of Ankit & Shimran", subtitle: "A Love Story", eyebrow: "A LOVE STORY",
+    id: "main-hero", title: "The Story of Ankit & you", subtitle: "A Love Story", eyebrow: "A LOVE STORY",
     description: "From unexpected beginnings to unforgettable memories, this is the story of two people who found home in each other.",
     bannerUrl: hero, mobileBannerUrl: hero, titleLogoUrl: "", previewVideoUrl: "", mediaId: "memory-1",
     playButtonText: "Play", infoButtonText: "More Info", metadataText: "2026 · A Lifetime Series · Romance",
@@ -45,7 +45,7 @@ export const sampleData: BootstrapData = {
   })),
   media,
   credits: [
-    ["Directed by", "God"], ["Cast", "Ankit and Shimran"], ["Story by", "Our Memories"], ["Produced by", "Love, Patience and Support"],
+    ["Directed by", "God"], ["Cast", "Ankit and you"], ["Story by", "Our Memories"], ["Produced by", "Love, Patience and Support"],
     ["Location", "Wherever We Are Together"], ["Soundtrack", "Our Favourite Songs"], ["Special Thanks", "Family and Friends"], ["Final Message", "To be continued forever..."],
   ].map(([role, name], index) => ({ id: `credit-${index + 1}`, groupId: "main-credits", sectionTitle: "", role, name, message: "", imageUrl: index === 0 ? hero : "", sortOrder: index + 1 })),
   contentVersion: "demo-1", generatedAt: new Date(0).toISOString(),

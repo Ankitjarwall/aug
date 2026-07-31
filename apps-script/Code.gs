@@ -36,6 +36,7 @@ function handleRequest_(action, request, isPost) {
     else if (action === "state") data = debugStage_("route.state", function() { return getUserState_(request.visitorId || ""); }, { visitorId: request.visitorId });
     else if (action === "validateMedia") data = debugStage_("route.validateMedia", function() { return validateAllMedia(); });
     else if (action === "createSession") data = debugStage_("route.createSession", function() { return createSession_(request.visitorId); }, { visitorId: request.visitorId });
+
     else {
       debugStage_("security.session", function() { verifyWrite_(request); }, { visitorId: request.visitorId });
       debugStage_("security.rateLimit", function() { enforceRateLimit_(request.visitorId, action); }, { visitorId: request.visitorId, action: action });

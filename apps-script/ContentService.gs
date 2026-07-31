@@ -53,7 +53,7 @@ function buildContent_() {
   return data;
 }
 function mapSettings_(s) { return {
-  siteTitle: s.site_title || "Ankit & Shimran", partnerOneName: s.partner_one_name || "Ankit", partnerTwoName: s.partner_two_name || "Shimran", defaultTagline: s.default_tagline || "", logoText: s.netflix_logo_text || "OUR STORY", profileName: s.profile_name || "",
+  siteTitle: s.site_title || "Ankit & you", partnerOneName: s.partner_one_name || "Ankit", partnerTwoName: s.partner_two_name || "you", defaultTagline: s.default_tagline || "", logoText: s.netflix_logo_text || "OUR STORY", profileName: s.profile_name || "",
   profileAvatarUrl: normalizeImageUrl_(s.profile_avatar_drive_url || ""), introEnabled: truthy_(s.intro_enabled), introDurationMs: num_(s.intro_duration_ms, 4000), introDisplayMode: s.intro_display_mode || "always", introAudioUrl: normalizeMediaUrl_(s.intro_audio_drive_url || "", "audio"),
   showNavigation: truthy_(s.show_navigation), showSearch: truthy_(s.show_search), showMyList: truthy_(s.show_my_list), showContinueWatching: truthy_(s.show_continue_watching), showCredits: truthy_(s.show_credits), creditsMediaId: s.credits_media_id || "", footerText: s.footer_text || "", themePrimaryColor: s.theme_primary_color || "#e50914", themeBackgroundColor: s.theme_background_color || "#141414"
 }; }

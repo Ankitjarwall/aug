@@ -19,7 +19,7 @@ test("intro can be skipped and dynamic rows render", async ({ page }, testInfo) 
     expect(await page.evaluate(() => scrollY)).toBe(0);
   }
   await page.getByRole("button", { name: "Skip intro" }).click();
-  await expect(page.getByRole("heading", { name: "The Story of Ankit & Shimran" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The Story of Ankit & you" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Our Story" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.style.overflow)).toBe("");
 });
