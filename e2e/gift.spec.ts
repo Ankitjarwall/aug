@@ -79,6 +79,34 @@ test("favourite updates My List and play opens the player", async ({ page }) => 
   await expect(page.locator(".player")).toBeVisible();
 });
 
+test("opening intro fills then hands off to looping background music", async ({ page }) => {
+  const music = page.locator("[data-background-music]");
+  await expect.poll(() => page.evaluate(() => document.documentElement.style.overflow)).toBe("hidden");
+  await expect(music).toHaveAttribute("src", /song[.]m4a$/);
+  expect(await music.evaluate((node: HTMLAudioElement) => node.loop)).toBe(true);
+  await music.evaluate((node: HTMLAudioElement) => {
+    node.dataset.playCalls = "0";
+    node.dataset.pauseCalls = "0";
+    node.play = () => { node.dataset.playCalls = String(Number(node.dataset.playCalls) + 1); return Promise.resolve(); };
+    node.pause = () => { node.dataset.pauseCalls = String(Number(node.dataset.pauseCalls) + 1); };
+  });
+
+  expect(await music.getAttribute("data-play-calls")).toBe("0");
+  await finishOpeningIntro(page);
+  await expect.poll(() => music.getAttribute("data-play-calls")).toBe("1");
+
+  await page.getByRole("button", { name: "Open The Day It Began" }).first().click();
+  await page.getByRole("dialog").getByRole("button", { name: "Play", exact: true }).click();
+  await expect.poll(async () => Number(await music.getAttribute("data-pause-calls"))).toBeGreaterThan(0);
+  const player = page.locator(".player");
+  await player.evaluate((root) => {
+    [...root.querySelectorAll("button")].find((button) => button.textContent === "Skip intro")?.click();
+  });
+  await expect(player).toHaveAttribute("data-phase", "content");
+  await player.locator("video").dispatchEvent("ended");
+  await expect(page.getByRole("dialog", { name: "Ending credits" })).toBeVisible();
+  await expect.poll(() => music.getAttribute("data-play-calls")).toBe("2");
+});
 test("video plays an audible intro before uploaded content", async ({ page }) => {
   await page.getByRole("button", { name: "Open The Day It Began" }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: "Play", exact: true }).click();

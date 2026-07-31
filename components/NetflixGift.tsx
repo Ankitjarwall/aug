@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ContentRow } from "@/components/ContentRow";
 import { EndingCredits } from "@/components/EndingCredits";
 import { FullscreenPlayer } from "@/components/FullscreenPlayer";
@@ -11,14 +11,17 @@ import { Navbar } from "@/components/Navbar";
 import { NetflixIntro } from "@/components/NetflixIntro";
 import { PermissionModal } from "@/components/PermissionModal";
 import { useGiftData } from "@/hooks/useGiftData";
+import { backgroundSongUrl } from "@/lib/assets";
 import { continueWatching, mapCategory, myList } from "@/lib/state";
 import type { MediaItem } from "@/types/content";
 
 export function NetflixGift() {
+  const music = useRef<HTMLAudioElement>(null);
   const { data, states, byMediaId, loading, offline, error, saveState } = useGiftData();
   const [introDone, setIntroDone] = useState(false), [query, setQuery] = useState("");
   const [selected, setSelected] = useState<MediaItem | null>(null), [playing, setPlaying] = useState<MediaItem | null>(null);
   const [credits, setCredits] = useState(false), [permission, setPermission] = useState<MediaItem | null>(null), [issuesDismissed, setIssuesDismissed] = useState(false);
+  const videoPlaying = playing?.mediaType === "video";
   const heroMedia = data.media.find((item) => item.id === data.hero.mediaId);
   const continueItems = continueWatching(data.media, states).map(({ media }) => media);
   const favourites = myList(data.media, states);
@@ -28,11 +31,29 @@ export function NetflixGift() {
     data.categories.forEach((category) => category.mediaIds.forEach((id) => categoryByMedia.set(id, [...(categoryByMedia.get(id) ?? []), category.title])));
     return data.media.filter((item) => [item.title, item.shortTitle, item.description, item.location, ...item.tags, ...(categoryByMedia.get(item.id) ?? [])].join(" ").toLowerCase().includes(term));
   }, [data, query]);
-
-  function openPlayer(media: MediaItem) { setSelected(null); if (media.mediaType === "credits") setCredits(true); else setPlaying(media); }
+  useEffect(() => {
+    const audio = music.current;
+    if (!audio) return;
+    if (!introDone || videoPlaying) { audio.pause(); return; }
+    let cancelled = false;
+    function removeRetry() { removeEventListener("pointerdown", start); removeEventListener("keydown", start); }
+    function start() {
+      if (cancelled) return;
+      void audio!.play().then(removeRetry).catch(() => {
+        if (!cancelled) {
+          addEventListener("pointerdown", start, { once: true });
+          addEventListener("keydown", start, { once: true });
+        }
+      });
+    }
+    start();
+    return () => { cancelled = true; removeRetry(); };
+  }, [introDone, videoPlaying]);
+  function openPlayer(media: MediaItem) { setSelected(null); if (media.mediaType === "credits") setCredits(true); else { if (media.mediaType === "video") music.current?.pause(); setPlaying(media); } }
   function toggle(media: MediaItem, field: "liked" | "favourite") { const current = byMediaId.get(media.id); saveState(media.id, { [field]: !current?.[field] }, field === "liked" ? "toggleLike" : "toggleFavourite"); }
 
   return <>
+    <audio ref={music} src={backgroundSongUrl} loop preload="auto" data-background-music />
     {!introDone && <NetflixIntro settings={data.settings} onDone={() => setIntroDone(true)} />}
     <main className={`site ${introDone ? "site--visible" : ""}`} style={{ "--accent": data.settings.themePrimaryColor, "--surface": data.settings.themeBackgroundColor } as React.CSSProperties}>
       <Navbar settings={data.settings} navigation={data.navigation} query={query} onQuery={setQuery} onMyList={() => document.getElementById("my-list")?.scrollIntoView({ behavior: "smooth" })} />
