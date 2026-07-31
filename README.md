@@ -1,4 +1,4 @@
-# Ankit & Shimran: A Cinematic Gift Site
+#A Cinematic Gift Site
 
 A static Next.js romantic memory site backed by Google Sheets and Google Drive through a public Google Apps Script Web App. The browser loads editable content from Sheets, uses a local demo payload when the API is not configured, and stores anonymous playback/favourite state locally and in the `UserState` sheet.
 
