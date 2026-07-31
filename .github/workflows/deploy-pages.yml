@@ -21,7 +21,7 @@ jobs:
       name: github-pages
     env:
       NEXT_PUBLIC_APPS_SCRIPT_URL: ${{ vars.NEXT_PUBLIC_APPS_SCRIPT_URL }}
-      NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH }}
+      NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH || format('/{0}', github.event.repository.name) }}
       NEXT_PUBLIC_SITE_ENV: production
     steps:
       - uses: actions/checkout@v4
