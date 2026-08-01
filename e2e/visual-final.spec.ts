@@ -6,6 +6,16 @@ async function selectCurrentProfile(page: Page) {
   await expect(page.locator(".profile-gate")).toBeHidden();
 }
 
+test.beforeEach(async ({ page }, testInfo) => {
+  await page.route("**/mock-api**", async (route) => {
+    const profile = { id: "profile-main", title: sampleData.settings.profileName, avatarUrl: sampleData.settings.profileAvatarUrl, heroId: sampleData.hero.id, categoryIds: sampleData.categories.map((category) => category.id), sortOrder: 1 };
+    const media = testInfo.title === "final credits visual" ? sampleData.media.map((item, index) => index ? item : { ...item, mediaType: "credits" as const }) : sampleData.media;
+    const data = { ...sampleData, hero: sampleData.hero, heroes: [sampleData.hero], profiles: [profile], media };
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify({ ok: true, data, meta: {}, error: null }) });
+  });
+  await page.addInitScript(() => { localStorage.clear(); sessionStorage.clear(); });
+});
+
 test("final profile chooser visual", async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
@@ -37,10 +47,6 @@ test("final mobile visual", async ({ page }, testInfo) => {
 test("final credits visual", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium");
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.route("**/mock-api**", async (route) => {
-    const data = { ...sampleData, profiles: undefined, heroes: undefined, media: sampleData.media.map((item, index) => index ? item : { ...item, mediaType: "credits" as const }) };
-    await route.fulfill({ contentType: "application/json", body: JSON.stringify({ ok: true, data, meta: {}, error: null }) });
-  });
   await page.goto("/");
   await selectCurrentProfile(page);
   await expect(page.locator(".site")).toHaveClass(/site--visible/);

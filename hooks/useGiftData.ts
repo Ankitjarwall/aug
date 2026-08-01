@@ -2,20 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, hasApiConfiguration } from "@/lib/api";
-import { sampleData } from "@/lib/sample-data";
 import { createVisitorId, enqueue, QUEUE_KEY, STATE_KEY, VISITOR_KEY } from "@/lib/state";
 import type { BootstrapData } from "@/types/content";
 import type { QueuedWrite, UserMediaState } from "@/types/state";
 
-const CONTENT_KEY = "gift-bootstrap-cache-v2";
-const LEGACY_CONTENT_KEY = "gift-bootstrap-cache";
+const CONTENT_KEY = "gift-bootstrap-cache-v3";
+const LEGACY_CONTENT_KEYS = ["gift-bootstrap-cache", "gift-bootstrap-cache-v2"];
 
 function readJson<T>(key: string, fallback: T): T {
   try { return JSON.parse(localStorage.getItem(key) ?? "") as T; } catch { return fallback; }
 }
 
 export function useGiftData() {
-  const [data, setData] = useState<BootstrapData>(sampleData);
+  const [data, setData] = useState<BootstrapData | null>(null);
   const [states, setStates] = useState<UserMediaState[]>([]);
   const [visitorId, setVisitorId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -27,11 +26,11 @@ export function useGiftData() {
     localStorage.setItem(VISITOR_KEY, id);
     setVisitorId(id);
     setStates(readJson<UserMediaState[]>(STATE_KEY, []));
-    localStorage.removeItem(LEGACY_CONTENT_KEY);
+    LEGACY_CONTENT_KEYS.forEach((key) => localStorage.removeItem(key));
     const cached = readJson<BootstrapData | null>(CONTENT_KEY, null);
     if (cached) setData(cached);
 
-    if (!hasApiConfiguration) { setLoading(false); return; }
+    if (!hasApiConfiguration) { setError("The Sheet API is not configured."); setLoading(false); return; }
     api.bootstrap(id).then((fresh) => {
       setData(fresh);
       localStorage.setItem(CONTENT_KEY, JSON.stringify(fresh));

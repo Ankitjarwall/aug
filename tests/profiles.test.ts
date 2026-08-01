@@ -5,21 +5,16 @@ import type { Profile } from "@/types/content";
 
 describe("profile catalog", () => {
   it("provides configured profiles", () => {
-    const data = { ...sampleData, profiles: sampleData.profiles?.map((profile) => ({ ...profile, id: profile.id.replace("sample-", "profile-") })) };
-    const profiles = availableProfiles(data);
+    const profiles = availableProfiles(sampleData);
     expect(profiles.map((profile) => profile.title)).toEqual(["In 2020 We", "Currently We", "In Future We"]);
     expect(new Set(profiles.map((profile) => profile.id)).size).toBe(3);
     expect(new Set(profiles.map((profile) => profile.avatarUrl)).size).toBe(3);
     for (const profile of profiles) {
-      const view = profileContent(data, profile.id);
+      const view = profileContent(sampleData, profile.id);
       expect(view?.hero.id).toBe(profile.heroId);
       expect(view?.categories.map((category) => category.id)).toEqual(profile.categoryIds);
       expect(view?.media.length).toBeGreaterThan(0);
     }
-  });
-
-  it("hides generated sample profiles from the chooser", () => {
-    expect(availableProfiles(sampleData)).toEqual([expect.objectContaining({ id: "legacy-profile", title: sampleData.settings.profileName })]);
   });
 
   it("sorts and caps configured profiles at five", () => {
@@ -30,10 +25,8 @@ describe("profile catalog", () => {
     expect(availableProfiles({ ...sampleData, profiles }).map((profile) => profile.sortOrder)).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it("creates one backward-compatible profile for legacy cached data", () => {
+  it("requires configured profile rows", () => {
     const profiles = availableProfiles({ ...sampleData, profiles: undefined, heroes: undefined });
-    expect(profiles).toHaveLength(1);
-    expect(profiles[0]).toMatchObject({ id: "legacy-profile", heroId: sampleData.hero.id });
-    expect(profiles[0].categoryIds).toEqual(sampleData.categories.map((category) => category.id));
+    expect(profiles).toEqual([]);
   });
 });

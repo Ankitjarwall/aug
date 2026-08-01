@@ -178,3 +178,4 @@ footer { color: #808080; text-align: center; padding: 45px 20px; font-size: .85r
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .media-card:hover { transform: none; }
 }
+.data-loading { min-height: 100svh; display: grid; place-items: center; background: #000; color: #fff; }

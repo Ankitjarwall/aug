@@ -59,9 +59,7 @@ test("opening intro fills the viewport without a skip action", async ({ page }, 
 test("desktop catalog starts below the hero actions", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "Desktop-only assertion");
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.reload();
-  await expect(page.getByRole("heading", { name: "Who's watching?" })).toBeVisible();
-  await page.locator(".profile-card").first().click();
+  await expect(page.locator(".site")).toHaveClass(/site--visible/);
   const actions = await page.locator(".hero-actions").boundingBox();
   const firstHeading = await page.locator(".content-row h2").first().boundingBox();
   expect(actions).not.toBeNull();
@@ -117,8 +115,9 @@ test("card opens details and Escape closes it", async ({ page }) => {
 
 test("stale browser cache is replaced by fresh production data", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "The Story of Ankit & Nish" })).toBeVisible();
-  const cache = await page.evaluate(() => ({ legacy: localStorage.getItem("gift-bootstrap-cache"), current: JSON.parse(localStorage.getItem("gift-bootstrap-cache-v2") || "null") }));
+  const cache = await page.evaluate(() => ({ legacy: localStorage.getItem("gift-bootstrap-cache"), previous: localStorage.getItem("gift-bootstrap-cache-v2"), current: JSON.parse(localStorage.getItem("gift-bootstrap-cache-v3") || "null") }));
   expect(cache.legacy).toBeNull();
+  expect(cache.previous).toBeNull();
   expect(cache.current.settings).toMatchObject({ siteTitle: "Ankit & Nish", partnerTwoName: "Nish", profileName: "Kukki and Panda" });
 });
 
@@ -173,7 +172,6 @@ test("video plays an audible intro before uploaded content", async ({ page }) =>
   await page.getByRole("dialog").getByRole("button", { name: "Play", exact: true }).click();
   const player = page.locator(".player");
   await expect(player).toHaveAttribute("data-phase", "intro");
-  const video = player.locator("video");
   const introState = await player.evaluate((root) => {
     const video = root.querySelector("video")!;
     const skip = [...root.querySelectorAll("button")].find((button) => button.textContent === "Skip intro");

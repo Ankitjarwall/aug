@@ -8,16 +8,8 @@ export interface ProfileContent {
 }
 
 export function availableProfiles(data: BootstrapData): Profile[] {
-  const configured = (data.profiles ?? []).filter((profile) => !profile.id.startsWith("sample-")).sort((a, b) => a.sortOrder - b.sortOrder).slice(0, 5);
-  if (configured.length) return configured;
-  return [{
-    id: "legacy-profile",
-    title: data.settings.profileName || data.settings.siteTitle,
-    avatarUrl: data.settings.profileAvatarUrl || data.hero.bannerUrl,
-    heroId: data.hero.id,
-    categoryIds: data.categories.map((category) => category.id),
-    sortOrder: 1,
-  }];
+  const configured = (data.profiles ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder).slice(0, 5);
+  return configured;
 }
 
 export function profileContent(data: BootstrapData, profileId: string): ProfileContent | null {

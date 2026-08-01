@@ -17,9 +17,17 @@ import { availableProfiles, profileContent } from "@/lib/profiles";
 import { continueWatching, mapCategory, myList } from "@/lib/state";
 import type { MediaItem, Profile } from "@/types/content";
 
+type GiftData = ReturnType<typeof useGiftData>;
+type GiftContentProps = Omit<GiftData, "data"> & { data: NonNullable<GiftData["data"]> };
+
 export function NetflixGift() {
+  const gift = useGiftData();
+  if (!gift.data) return <main className="data-loading"><div role="status">{gift.loading ? "Loading your story..." : gift.error || "Unable to load the Sheet data."}</div></main>;
+  return <NetflixGiftContent {...gift} data={gift.data} />;
+}
+
+function NetflixGiftContent({ data, states, byMediaId, loading, offline, error, saveState }: GiftContentProps) {
   const music = useRef<HTMLAudioElement>(null);
-  const { data, states, byMediaId, loading, offline, error, saveState } = useGiftData();
   const [introDone, setIntroDone] = useState(false), [profileId, setProfileId] = useState(""), [query, setQuery] = useState("");
   const [selected, setSelected] = useState<MediaItem | null>(null), [playing, setPlaying] = useState<MediaItem | null>(null);
   const [credits, setCredits] = useState(false), [permission, setPermission] = useState<MediaItem | null>(null), [issuesDismissed, setIssuesDismissed] = useState(false);
@@ -77,7 +85,7 @@ export function NetflixGift() {
         <Navbar settings={data.settings} navigation={navigation} profile={view.profile} query={query} onQuery={setQuery} onMyList={() => document.getElementById("my-list")?.scrollIntoView({ behavior: "smooth" })} onSwitchProfile={switchProfile} />
         <HeroBanner hero={activeHero} media={heroMedia} onPlay={() => heroMedia && openPlayer(heroMedia)} onInfo={() => heroMedia && setSelected(heroMedia)} />
         <div className="catalog" aria-busy={loading}>
-          {offline && <div className="status-pill" role="status">Offline preview{error ? ` - ${error}` : ""}</div>}
+          {offline && <div className="status-pill" role="status">Showing the last synced Sheet data{error ? ` - ${error}` : ""}</div>}
           {query && <ContentRow id="search-results" title={results.length ? `Results for "${query}"` : `No memories found for "${query}"`} items={results} states={byMediaId} onOpen={setSelected} />}
           {!query && <>
             {data.settings.showContinueWatching && <ContentRow id="continue-watching" title="Continue Watching" items={continueItems} states={byMediaId} onOpen={setSelected} />}
