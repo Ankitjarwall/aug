@@ -18,7 +18,6 @@ function initializeNetflixGiftSheet() {
       applySheetRules_(sheet, existing);
       debugInfo_("setup.sheet.complete", "Sheet tab prepared.", { sheetName: name, created: created, addedHeaders: addedHeaders, rowCount: sheet.getLastRow(), columnCount: existing.length });
     });
-    insertSampleContent();
     var version = clearContentCache_();
     debugInfo_("setup.complete", "Sheet initialization completed.", { sheetCount: names.length, contentVersion: version, durationMs: Date.now() - startedAt });
     if (ownsContext) finishDebugExecution_(true, { sheetCount: names.length, contentVersion: version });
@@ -104,6 +103,15 @@ function insertSampleContent() {
   var startedAt = Date.now();
   try {
     var ss = spreadsheet_();
+    var populatedSheets = ["Settings", "Hero", "Media"].filter(function(sheetName) {
+      var sheet = ss.getSheetByName(sheetName);
+      if (!sheet || sheet.getLastRow() < 2) return false;
+      return sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getDisplayValues().some(function(row) { return String(row[0] || "").trim() !== ""; });
+    });
+    if (populatedSheets.length) {
+      debugWarn_("samples.blocked", "Sample content insertion was blocked to protect existing data.", { populatedSheets: populatedSheets });
+      throw apiException_("PRODUCTION_DATA_PRESENT", "Sample content can only be inserted into an empty workbook. Existing data was not changed.", { populatedSheets: populatedSheets });
+    }
     var sampleResults = {};
     var demoImages = [
       "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=1600&q=85",
