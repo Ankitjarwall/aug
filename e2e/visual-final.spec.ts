@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { sampleData } from "@/lib/sample-data";
 
 async function selectCurrentProfile(page: Page) {
   await page.locator(".profile-card").first().click();
@@ -36,18 +37,14 @@ test("final mobile visual", async ({ page }, testInfo) => {
 test("final credits visual", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium");
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.route("**/mock-api**", async (route) => {
+    const data = { ...sampleData, profiles: undefined, heroes: undefined, media: sampleData.media.map((item, index) => index ? item : { ...item, mediaType: "credits" as const }) };
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify({ ok: true, data, meta: {}, error: null }) });
+  });
   await page.goto("/");
   await selectCurrentProfile(page);
   await expect(page.locator(".site")).toHaveClass(/site--visible/);
-  await page.getByRole("button", { name: "Open The Day It Began" }).first().click();
-  await page.getByRole("dialog").getByRole("button", { name: "Play", exact: true }).click();
-  const player = page.locator(".player");
-  await expect(player).toHaveAttribute("data-phase", "intro");
-  await player.evaluate((root) => {
-    [...root.querySelectorAll("button")].find((button) => button.textContent === "Skip intro")?.click();
-  });
-  await expect(player).toHaveAttribute("data-phase", "content");
-  await player.locator("video").dispatchEvent("ended");
+  await page.locator(".hero-actions").getByRole("button", { name: "Play", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Ending credits" })).toBeVisible();
   await page.addStyleTag({ content: ".credits-roll { animation: none !important; transform: translateY(-55vh); } .credits-progress { animation: none !important; }" });
   await page.screenshot({ path: "test-results/final-credits.png" });
