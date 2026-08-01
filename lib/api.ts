@@ -25,7 +25,7 @@ async function request<T>(action: string, options?: { method?: "GET" | "POST"; b
   url.searchParams.set("action", action);
   if (method === "GET") Object.entries(options?.body ?? {}).forEach(([key, value]) => url.searchParams.set(key, String(value)));
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
   try {
     const response = await fetch(url, {
       method, signal: controller.signal,
