@@ -8,7 +8,7 @@ export interface ProfileContent {
 }
 
 export function availableProfiles(data: BootstrapData): Profile[] {
-  const configured = (data.profiles ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder).slice(0, 5);
+  const configured = (data.profiles ?? []).filter((profile) => !profile.id.startsWith("sample-")).sort((a, b) => a.sortOrder - b.sortOrder).slice(0, 5);
   if (configured.length) return configured;
   return [{
     id: "legacy-profile",

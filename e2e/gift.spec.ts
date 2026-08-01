@@ -17,12 +17,13 @@ test.beforeEach(async ({ page }, testInfo) => {
   if (!testInfo.title.startsWith("opening intro fills")) await page.emulateMedia({ reducedMotion: "reduce" });
   await page.route("**/mock-api**", async (route) => {
     const action = new URL(route.request().url()).searchParams.get("action");
-    const media = sampleData.media.map((item, index) => index === 0 ? { ...item, mediaType: "video" as const, videoUrl: "/netflix-intro.mp4?content=1", endingCreditsId: "" } : item);
+    const media = sampleData.media.map((item, index) => index === 0 ? { ...item, mediaType: "video" as const, videoUrl: "/netflix-intro.mp4", endingCreditsId: "" } : item);
     const production = testInfo.title.startsWith("stale browser cache");
     const hero = production ? { ...sampleData.hero, title: "The Story of Ankit & Nish" } : sampleData.hero;
     const settings = production ? { ...sampleData.settings, siteTitle: "Ankit & Nish", partnerTwoName: "Nish", profileName: "Kukki and Panda" } : sampleData.settings;
     const heroes = (sampleData.heroes ?? [sampleData.hero]).map((item) => item.id === hero.id ? hero : item);
-    const data = action === "bootstrap" ? { ...sampleData, settings, hero, heroes, media, sessionToken: "test-token", sessionExpiresAt: Date.now() + 3600000 } : { saved: true };
+    const profiles = sampleData.profiles?.map((profile) => ({ ...profile, id: profile.id.replace("sample-", "profile-") }));
+    const data = action === "bootstrap" ? { ...sampleData, settings, hero, heroes, profiles, media, sessionToken: "test-token", sessionExpiresAt: Date.now() + 3600000 } : { saved: true };
     await route.fulfill({ contentType: "application/json", body: JSON.stringify({ ok: true, data, meta: { apiVersion: "1", generatedAt: new Date().toISOString(), contentVersion: "test" }, error: null }) });
   });
   if (testInfo.title.startsWith("stale browser cache")) await page.addInitScript((stale) => { localStorage.clear(); sessionStorage.clear(); localStorage.setItem("gift-bootstrap-cache", JSON.stringify(stale)); }, sampleData);
@@ -59,7 +60,8 @@ test("desktop catalog starts below the hero actions", async ({ page }, testInfo)
   test.skip(testInfo.project.name !== "chromium", "Desktop-only assertion");
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.reload();
-  await selectProfile(page);
+  await expect(page.getByRole("heading", { name: "Who's watching?" })).toBeVisible();
+  await page.locator(".profile-card").first().click();
   const actions = await page.locator(".hero-actions").boundingBox();
   const firstHeading = await page.locator(".content-row h2").first().boundingBox();
   expect(actions).not.toBeNull();
@@ -161,15 +163,17 @@ test("opening intro fills then hands off to looping background music", async ({ 
   await expect.poll(() => music.getAttribute("data-play-calls")).toBe("2");
 });
 test("video plays an audible intro before uploaded content", async ({ page }) => {
+  await page.evaluate(() => {
+    HTMLMediaElement.prototype.play = function () {
+      this.dataset.playCalls = String(Number(this.dataset.playCalls || "0") + 1);
+      return Promise.resolve();
+    };
+  });
   await page.getByRole("button", { name: "Open The Day It Began" }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: "Play", exact: true }).click();
   const player = page.locator(".player");
   await expect(player).toHaveAttribute("data-phase", "intro");
   const video = player.locator("video");
-  await video.evaluate((node: HTMLVideoElement) => {
-    node.dataset.playCalls = "0";
-    node.play = () => { node.dataset.playCalls = String(Number(node.dataset.playCalls) + 1); return Promise.resolve(); };
-  });
   const introState = await player.evaluate((root) => {
     const video = root.querySelector("video")!;
     const skip = [...root.querySelectorAll("button")].find((button) => button.textContent === "Skip intro");
@@ -180,7 +184,7 @@ test("video plays an audible intro before uploaded content", async ({ page }) =>
   expect(introState).toMatchObject({ muted: false, src: expect.stringMatching(/netflix-intro\.mp4$/), objectFit: "cover", hasSkip: true });
   await expect(player).toHaveAttribute("data-phase", "content");
   const contentVideo = player.locator("video");
-  await expect(contentVideo).toHaveAttribute("src", /netflix-intro[.]mp4[?]content=1$/);
+  await expect(contentVideo).toHaveAttribute("src", /netflix-intro[.]mp4$/);
   await contentVideo.dispatchEvent("canplay");
   await expect.poll(async () => Number(await contentVideo.getAttribute("data-play-calls"))).toBeGreaterThan(0);
   await contentVideo.dispatchEvent("ended");

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 async function selectCurrentProfile(page: Page) {
-  await page.getByRole("button", { name: "Currently We", exact: true }).click();
+  await page.locator(".profile-card").first().click();
   await expect(page.locator(".profile-gate")).toBeHidden();
 }
 
@@ -9,7 +9,7 @@ test("final profile chooser visual", async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Who's watching?" })).toBeVisible();
-  await expect(page.locator(".profile-card")).toHaveCount(3);
+  await expect(page.locator(".profile-card")).toHaveCount(1);
   await page.screenshot({ path: `test-results/profile-${testInfo.project.name}.png`, fullPage: true });
 });
 test("final desktop visual", async ({ page }, testInfo) => {

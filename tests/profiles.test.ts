@@ -4,17 +4,22 @@ import { sampleData } from "@/lib/sample-data";
 import type { Profile } from "@/types/content";
 
 describe("profile catalog", () => {
-  it("provides three distinct Sheet-style sample profiles", () => {
-    const profiles = availableProfiles(sampleData);
+  it("provides configured profiles", () => {
+    const data = { ...sampleData, profiles: sampleData.profiles?.map((profile) => ({ ...profile, id: profile.id.replace("sample-", "profile-") })) };
+    const profiles = availableProfiles(data);
     expect(profiles.map((profile) => profile.title)).toEqual(["In 2020 We", "Currently We", "In Future We"]);
     expect(new Set(profiles.map((profile) => profile.id)).size).toBe(3);
     expect(new Set(profiles.map((profile) => profile.avatarUrl)).size).toBe(3);
     for (const profile of profiles) {
-      const view = profileContent(sampleData, profile.id);
+      const view = profileContent(data, profile.id);
       expect(view?.hero.id).toBe(profile.heroId);
       expect(view?.categories.map((category) => category.id)).toEqual(profile.categoryIds);
       expect(view?.media.length).toBeGreaterThan(0);
     }
+  });
+
+  it("hides generated sample profiles from the chooser", () => {
+    expect(availableProfiles(sampleData)).toEqual([expect.objectContaining({ id: "legacy-profile", title: sampleData.settings.profileName })]);
   });
 
   it("sorts and caps configured profiles at five", () => {
