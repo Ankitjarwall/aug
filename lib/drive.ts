@@ -22,7 +22,7 @@ export function buildDriveUrls(value: string) {
   return {
     original: value,
     image: `https://drive.google.com/thumbnail?id=${ref.id}&sz=w1600${key}`,
-    video: `https://drive.google.com/uc?export=download&id=${ref.id}${key}`,
+    video: `https://drive.usercontent.google.com/download?id=${ref.id}&export=download&confirm=t${key}`,
     preview: `https://drive.google.com/file/d/${ref.id}/preview${ref.resourceKey ? `?resourcekey=${encodeURIComponent(ref.resourceKey)}` : ""}`,
     open: `https://drive.google.com/file/d/${ref.id}/view${ref.resourceKey ? `?resourcekey=${encodeURIComponent(ref.resourceKey)}` : ""}`,
   };

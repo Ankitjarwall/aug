@@ -20,7 +20,7 @@ export function FullscreenPlayer({ media, state, onClose, onProgress, onCredits,
   const shell = useRef<HTMLDivElement>(null);
   const lastSave = useRef({ time: state?.progressSeconds ?? 0, at: Date.now() });
   const [phase, setPhase] = useState<"intro" | "content">("intro");
-  const [introBlocked, setIntroBlocked] = useState(false);
+  const [introBlocked, setIntroBlocked] = useState(false), [contentBlocked, setContentBlocked] = useState(false);
   const [playing, setPlaying] = useState(false), [muted, setMuted] = useState(false), [time, setTime] = useState(state?.progressSeconds ?? 0), [duration, setDuration] = useState(media.durationSeconds || 0), [driveFallback, setDriveFallback] = useState(false);
   const urls = buildDriveUrls(media.videoUrl);
   const source = media.videoUrl ? urls.video : "";
@@ -61,13 +61,13 @@ export function FullscreenPlayer({ media, state, onClose, onProgress, onCredits,
 
   return (
     <div className="player" ref={shell} data-phase={phase}>
-      <video key={phase} ref={video} src={isIntro ? netflixIntroUrl : source} poster={isIntro ? undefined : media.posterUrl || media.backdropUrl} autoPlay playsInline muted={isIntro ? false : muted}
+      <video ref={video} src={isIntro ? netflixIntroUrl : source} poster={isIntro ? undefined : media.posterUrl || media.backdropUrl} autoPlay playsInline muted={isIntro ? false : muted}
         onLoadedMetadata={(event) => { if (isIntro) return; const node = event.currentTarget; setDuration(node.duration); if (state?.progressSeconds) node.currentTime = state.progressSeconds; }}
         onTimeUpdate={(event) => { if (isIntro) return; setTime(event.currentTarget.currentTime); save(); }}
-        onCanPlay={(event) => { if (isIntro) void event.currentTarget.play().catch(() => setIntroBlocked(true)); }}
-        onPlay={() => { if (isIntro) setIntroBlocked(false); else setPlaying(true); }}
+        onCanPlay={(event) => { void event.currentTarget.play().then(() => { if (isIntro) setIntroBlocked(false); else setContentBlocked(false); }).catch(() => { if (isIntro) setIntroBlocked(true); else setContentBlocked(true); }); }}
+        onPlay={() => { if (isIntro) setIntroBlocked(false); else { setContentBlocked(false); setPlaying(true); } }}
         onPause={() => { if (!isIntro) { setPlaying(false); save(true); } }}
-        onEnded={(event) => { if (isIntro) { setPhase("content"); return; } event.currentTarget.pause(); save(true); if (media.endingCreditsId) onCredits(); else onClose(); }}
+        onEnded={(event) => { if (isIntro) { setPhase("content"); return; } event.currentTarget.pause(); save(true); onCredits(); }}
         onError={() => { if (isIntro) setPhase("content"); else setDriveFallback(true); }} />
       {isIntro ? (
         <>
@@ -77,6 +77,7 @@ export function FullscreenPlayer({ media, state, onClose, onProgress, onCredits,
         </>
       ) : (
         <>
+          {contentBlocked && <button className="intro-play-button" onClick={() => { void video.current?.play(); setContentBlocked(false); }} aria-label="Play video"><Play fill="currentColor" /></button>}
           <div className="player-top"><button className="round-button" onClick={onClose} aria-label="Close player"><X /></button><h2>{media.title}</h2></div>
           <div className="player-controls">
             <input type="range" min="0" max={duration || 1} step="0.1" value={time} aria-label="Playback position" onChange={(event) => { if (video.current) video.current.currentTime = Number(event.target.value); }} />

@@ -7,6 +7,10 @@ function getBootstrap_(visitorId) {
     try { content = JSON.parse(cached); debugInfo_("bootstrap.cache.hit", "Bootstrap content loaded from cache.", { bytes: cached.length }); }
     catch (error) { debugError_("bootstrap.cache.parse", "Cached bootstrap JSON was invalid; rebuilding content.", error, { bytes: cached.length }); }
   } else debugInfo_("bootstrap.cache.miss", "Bootstrap content cache missed.", { cacheKey: key });
+  if (content && (!Array.isArray(content.media) || !Array.isArray(content.categories) || !Array.isArray(content.credits) || !Array.isArray(content.profiles) || !Array.isArray(content.heroes))) {
+    debugWarn_("bootstrap.cache.stale", "Cached bootstrap shape is outdated; rebuilding content.", { cacheKey: key });
+    content = null;
+  }
   if (!content) {
     content = debugStage_("bootstrap.contentBuild", function() { return buildContent_(); });
     var serialized = JSON.stringify(content), ttl = Math.min(21600, Math.max(30, config.cacheSeconds));
@@ -38,13 +42,17 @@ function buildContent_() {
   var allProfileRows = rows_("Profiles", true).filter(enabled_).sort(sortOrder_);
   var profileLinks = rows_("ProfileCategories", true).filter(enabled_);
   var creditRows = rows_("Credits", true).filter(enabled_);
+  var availableCategoryIds = {};
+  categoryRows.forEach(function(row) { availableCategoryIds[row.category_id] = true; });
+  var ignoredProfileLinks = profileLinks.filter(function(link) { return !availableCategoryIds[link.category_id]; });
+  if (ignoredProfileLinks.length) debugWarn_("profileCategories.disabled", "Profile mappings to unavailable categories were ignored.", { ignoredMappings: ignoredProfileLinks.map(function(link) { return { profileId: link.profile_id, categoryId: link.category_id }; }) });
   if (allProfileRows.length > 5) debugWarn_("profiles.limit", "Only the first five enabled profiles are exposed.", { enabledCount: allProfileRows.length, ignoredProfileIds: allProfileRows.slice(5).map(function(row) { return row.profile_id; }) });
   var profileRows = allProfileRows.slice(0, 5);
   debugInfo_("content.build.rows", "Content rows loaded and filtered.", { settings: settingsRows.length, navigation: navigationRows.length, heroes: heroRows.length, profiles: profileRows.length, ignoredProfiles: Math.max(0, allProfileRows.length - 5), categories: categoryRows.length, media: mediaRows.length, categoryItems: links.length, profileCategories: profileLinks.length, credits: creditRows.length });
   var heroes = heroRows.sort(sortOrder_).map(mapHero_);
   var profiles = profileRows.map(function(row) {
     var profile = mapProfile_(row), seen = {};
-    profile.categoryIds = profileLinks.filter(function(link) { return link.profile_id === row.profile_id; }).sort(sortOrder_).map(function(link) { return link.category_id; }).filter(function(id) { if (seen[id]) return false; seen[id] = true; return true; });
+    profile.categoryIds = profileLinks.filter(function(link) { return link.profile_id === row.profile_id && availableCategoryIds[link.category_id]; }).sort(sortOrder_).map(function(link) { return link.category_id; }).filter(function(id) { if (seen[id]) return false; seen[id] = true; return true; });
     return profile;
   });
   var data = {

@@ -13,6 +13,7 @@ describe("Google Drive URL handling", () => {
   it("preserves resource keys in generated URLs", () => {
     const urls = buildDriveUrls(`https://drive.google.com/file/d/${id}/view?resourcekey=secret123`);
     expect(urls.image).toContain("resourcekey=secret123");
+    expect(urls.video).toBe(`https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t&resourcekey=secret123`);
     expect(urls.preview).toContain("resourcekey=secret123");
   });
 

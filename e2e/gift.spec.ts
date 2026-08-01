@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }, testInfo) => {
   if (!testInfo.title.startsWith("opening intro fills")) await page.emulateMedia({ reducedMotion: "reduce" });
   await page.route("**/mock-api**", async (route) => {
     const action = new URL(route.request().url()).searchParams.get("action");
-    const media = sampleData.media.map((item, index) => index === 0 ? { ...item, mediaType: "video" as const, videoUrl: "/netflix-intro.mp4?content=1" } : item);
+    const media = sampleData.media.map((item, index) => index === 0 ? { ...item, mediaType: "video" as const, videoUrl: "/netflix-intro.mp4?content=1", endingCreditsId: "" } : item);
     const data = action === "bootstrap" ? { ...sampleData, media, sessionToken: "test-token", sessionExpiresAt: Date.now() + 3600000 } : { saved: true };
     await route.fulfill({ contentType: "application/json", body: JSON.stringify({ ok: true, data, meta: { apiVersion: "1", generatedAt: new Date().toISOString(), contentVersion: "test" }, error: null }) });
   });
@@ -101,6 +101,9 @@ test("profiles select distinct Sheet-managed catalogs", async ({ page }, testInf
 test("card opens details and Escape closes it", async ({ page }) => {
   await page.getByRole("button", { name: "Open The Day It Began" }).first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  const backdrop = await page.locator(".details-backdrop").boundingBox();
+  const shade = await page.locator(".details-shade").boundingBox();
+  expect(shade!.y + shade!.height).toBeGreaterThanOrEqual(backdrop!.y + backdrop!.height - 1);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
 });
@@ -150,6 +153,11 @@ test("video plays an audible intro before uploaded content", async ({ page }) =>
   await page.getByRole("dialog").getByRole("button", { name: "Play", exact: true }).click();
   const player = page.locator(".player");
   await expect(player).toHaveAttribute("data-phase", "intro");
+  const video = player.locator("video");
+  await video.evaluate((node: HTMLVideoElement) => {
+    node.dataset.playCalls = "0";
+    node.play = () => { node.dataset.playCalls = String(Number(node.dataset.playCalls) + 1); return Promise.resolve(); };
+  });
   const introState = await player.evaluate((root) => {
     const video = root.querySelector("video")!;
     const skip = [...root.querySelectorAll("button")].find((button) => button.textContent === "Skip intro");
@@ -161,6 +169,8 @@ test("video plays an audible intro before uploaded content", async ({ page }) =>
   await expect(player).toHaveAttribute("data-phase", "content");
   const contentVideo = player.locator("video");
   await expect(contentVideo).toHaveAttribute("src", /netflix-intro[.]mp4[?]content=1$/);
+  await contentVideo.dispatchEvent("canplay");
+  await expect.poll(async () => Number(await contentVideo.getAttribute("data-play-calls"))).toBeGreaterThan(0);
   await contentVideo.dispatchEvent("ended");
   const credits = page.getByRole("dialog", { name: "Ending credits" });
   await expect(credits).toBeVisible();
