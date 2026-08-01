@@ -18,10 +18,15 @@ test.beforeEach(async ({ page }, testInfo) => {
   await page.route("**/mock-api**", async (route) => {
     const action = new URL(route.request().url()).searchParams.get("action");
     const media = sampleData.media.map((item, index) => index === 0 ? { ...item, mediaType: "video" as const, videoUrl: "/netflix-intro.mp4?content=1", endingCreditsId: "" } : item);
-    const data = action === "bootstrap" ? { ...sampleData, media, sessionToken: "test-token", sessionExpiresAt: Date.now() + 3600000 } : { saved: true };
+    const production = testInfo.title.startsWith("stale browser cache");
+    const hero = production ? { ...sampleData.hero, title: "The Story of Ankit & Nish" } : sampleData.hero;
+    const settings = production ? { ...sampleData.settings, siteTitle: "Ankit & Nish", partnerTwoName: "Nish", profileName: "Kukki and Panda" } : sampleData.settings;
+    const heroes = (sampleData.heroes ?? [sampleData.hero]).map((item) => item.id === hero.id ? hero : item);
+    const data = action === "bootstrap" ? { ...sampleData, settings, hero, heroes, media, sessionToken: "test-token", sessionExpiresAt: Date.now() + 3600000 } : { saved: true };
     await route.fulfill({ contentType: "application/json", body: JSON.stringify({ ok: true, data, meta: { apiVersion: "1", generatedAt: new Date().toISOString(), contentVersion: "test" }, error: null }) });
   });
-  await page.addInitScript(() => { localStorage.clear(); sessionStorage.clear(); });
+  if (testInfo.title.startsWith("stale browser cache")) await page.addInitScript((stale) => { localStorage.clear(); sessionStorage.clear(); localStorage.setItem("gift-bootstrap-cache", JSON.stringify(stale)); }, sampleData);
+  else await page.addInitScript(() => { localStorage.clear(); sessionStorage.clear(); });
   await page.goto("/");
   if (!testInfo.title.startsWith("opening intro fills") && !testInfo.title.startsWith("profiles ")) await selectProfile(page);
 });
@@ -106,6 +111,13 @@ test("card opens details and Escape closes it", async ({ page }) => {
   expect(shade!.y + shade!.height).toBeGreaterThanOrEqual(backdrop!.y + backdrop!.height - 1);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
+});
+
+test("stale browser cache is replaced by fresh production data", async ({ page }) => {
+  await expect(page.getByRole("heading", { name: "The Story of Ankit & Nish" })).toBeVisible();
+  const cache = await page.evaluate(() => ({ legacy: localStorage.getItem("gift-bootstrap-cache"), current: JSON.parse(localStorage.getItem("gift-bootstrap-cache-v2") || "null") }));
+  expect(cache.legacy).toBeNull();
+  expect(cache.current.settings).toMatchObject({ siteTitle: "Ankit & Nish", partnerTwoName: "Nish", profileName: "Kukki and Panda" });
 });
 
 test("favourite updates My List and play opens the player", async ({ page }) => {

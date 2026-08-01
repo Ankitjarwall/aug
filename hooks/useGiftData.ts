@@ -7,7 +7,8 @@ import { createVisitorId, enqueue, QUEUE_KEY, STATE_KEY, VISITOR_KEY } from "@/l
 import type { BootstrapData } from "@/types/content";
 import type { QueuedWrite, UserMediaState } from "@/types/state";
 
-const CONTENT_KEY = "gift-bootstrap-cache";
+const CONTENT_KEY = "gift-bootstrap-cache-v2";
+const LEGACY_CONTENT_KEY = "gift-bootstrap-cache";
 
 function readJson<T>(key: string, fallback: T): T {
   try { return JSON.parse(localStorage.getItem(key) ?? "") as T; } catch { return fallback; }
@@ -26,15 +27,14 @@ export function useGiftData() {
     localStorage.setItem(VISITOR_KEY, id);
     setVisitorId(id);
     setStates(readJson<UserMediaState[]>(STATE_KEY, []));
+    localStorage.removeItem(LEGACY_CONTENT_KEY);
     const cached = readJson<BootstrapData | null>(CONTENT_KEY, null);
     if (cached) setData(cached);
 
     if (!hasApiConfiguration) { setLoading(false); return; }
     api.bootstrap(id).then((fresh) => {
-      if (!cached || fresh.generatedAt >= cached.generatedAt) {
-        setData(fresh);
-        localStorage.setItem(CONTENT_KEY, JSON.stringify(fresh));
-      }
+      setData(fresh);
+      localStorage.setItem(CONTENT_KEY, JSON.stringify(fresh));
       if (fresh.userState?.length) { setStates(fresh.userState); localStorage.setItem(STATE_KEY, JSON.stringify(fresh.userState)); }
       setOffline(false);
     }).catch((reason: unknown) => {
